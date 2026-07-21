@@ -3,12 +3,16 @@ let segmenterSession;
 let editableMask = null;
 let segmentationCanvas = null;
 let segmentationCtx = null;
-let painting = false;
-let brushRadius = 8;
-let eraseMode = false;
 let lastOriginalCanvas = null;
 
 let cropInfo = null;
+let modelsReady;
+let dragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+
+let maskOffsetX = 0;
+let maskOffsetY = 0;
 const classes = [
     "glioma",
     "meningioma",
@@ -17,12 +21,17 @@ const classes = [
 ];
 function redrawMask(originalCanvas){
 
+    if(!segmentationCtx || !editableMask)
+        return;
+
+
     segmentationCtx.clearRect(
         0,
         0,
         512,
         512
     );
+
 
     segmentationCtx.drawImage(
         originalCanvas,
@@ -42,18 +51,51 @@ function redrawMask(originalCanvas){
         );
 
 
-    for(let i=0;i<editableMask.length;i++){
+    for(let y=0;y<512;y++){
 
-        if(editableMask[i]){
+    for(let x=0;x<512;x++){
 
-            image.data[i*4]=255;
-            image.data[i*4+1]=0;
-            image.data[i*4+2]=0;
-            image.data[i*4+3]=150;
+
+        const srcX =
+            x - maskOffsetX;
+
+
+        const srcY =
+            y - maskOffsetY;
+
+
+        if(
+            srcX < 0 ||
+            srcY < 0 ||
+            srcX >= 512 ||
+            srcY >= 512
+        )
+            continue;
+
+
+
+        const index =
+            Math.floor(srcY)*512 +
+            Math.floor(srcX);
+
+
+
+        if(editableMask[index] === 1){
+
+            const pixel =
+                (y*512+x)*4;
+
+
+            image.data[pixel] = 255;
+            image.data[pixel+1] = 0;
+            image.data[pixel+2] = 0;
+            image.data[pixel+3] = 120;
 
         }
 
     }
+
+}
 
 
     segmentationCtx.putImageData(
@@ -61,156 +103,160 @@ function redrawMask(originalCanvas){
         0,
         0
     );
+
 }
-function paintMask(e){
+function startDrag(e){
 
-    if(!painting) return;
+    dragging = true;
 
-    const rect =
-        segmentationCanvas.getBoundingClientRect();
 
-    // Mouse position on displayed image
-    const displayX =
-        (e.clientX - rect.left) *
-        512 / rect.width;
+    dragStartX =
+        e.clientX;
 
-    const displayY =
-        (e.clientY - rect.top) *
-        512 / rect.height;
+    dragStartY =
+        e.clientY;
 
-    // Crop rectangle on displayed image
-    const cropDisplayX =
-        cropInfo.x * 512 / lastOriginalCanvas.width;
+}
 
-    const cropDisplayY =
-        cropInfo.y * 512 / lastOriginalCanvas.height;
 
-    const cropDisplayWidth =
-        cropInfo.width * 512 / lastOriginalCanvas.width;
+function dragMask(e){
 
-    const cropDisplayHeight =
-        cropInfo.height * 512 / lastOriginalCanvas.height;
-
-    // Ignore clicks outside crop
-    if(
-        displayX < cropDisplayX ||
-        displayX > cropDisplayX + cropDisplayWidth ||
-        displayY < cropDisplayY ||
-        displayY > cropDisplayY + cropDisplayHeight
-    ){
+    if(!dragging)
         return;
-    }
 
-    // Convert back to mask coordinates
-    const centerX =
-        Math.floor(
-            (displayX - cropDisplayX) *
-            512 / cropDisplayWidth
+
+    const dx =
+        e.clientX - dragStartX;
+
+    const dy =
+        e.clientY - dragStartY;
+
+
+    maskOffsetX += dx;
+    maskOffsetY += dy;
+
+
+    dragStartX =
+        e.clientX;
+
+    dragStartY =
+        e.clientY;
+
+
+    redrawMask(
+        lastOriginalCanvas
+    );
+
+}
+
+
+function endDrag(){
+
+    dragging = false;
+
+}
+function displayMask(
+    maskData,
+    originalCanvas
+){
+
+    console.log(
+        "Displaying segmentation:",
+        maskData.length
+    );
+
+
+    const canvas =
+        document.createElement("canvas");
+
+
+    canvas.width = 512;
+    canvas.height = 512;
+
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    segmentationCanvas = canvas;
+    segmentationCtx = ctx;
+
+
+    lastOriginalCanvas =
+        originalCanvas;
+
+
+
+    editableMask =
+        new Uint8Array(
+            maskData.length
         );
 
-    const centerY =
-        Math.floor(
-            (displayY - cropDisplayY) *
-            512 / cropDisplayHeight
-        );
 
-    for(let dy=-brushRadius; dy<=brushRadius; dy++){
+    let tumorPixels = 0;
 
-        for(let dx=-brushRadius; dx<=brushRadius; dx++){
 
-            if(dx*dx + dy*dy > brushRadius*brushRadius)
-                continue;
+    for(let i=0;i<maskData.length;i++){
 
-            const xx = centerX + dx;
-            const yy = centerY + dy;
 
-            if(
-                xx < 0 ||
-                yy < 0 ||
-                xx >= 512 ||
-                yy >= 512
-            ) continue;
+        const probability =
+            1/(1+Math.exp(-maskData[i]));
 
-            editableMask[yy*512 + xx] =
-                eraseMode ? 0 : 1;
+
+        // Lower threshold because model outputs logits
+        if(probability > 0.5){
+
+            editableMask[i]=1;
+            tumorPixels++;
 
         }
 
     }
 
-    redrawMask(lastOriginalCanvas);
 
-}
-function displayMask(
-    maskData,
-    originalCanvas,
-    crop
-){
-
-    const canvas =
-        document.createElement("canvas");
-
-    canvas.width=512;
-    canvas.height=512;
-
-    const ctx =
-        canvas.getContext("2d");
-
-    segmentationCanvas = canvas;
-    segmentationCtx = ctx;
-
-    lastOriginalCanvas =
-        originalCanvas;
-
-    cropInfo = crop;
-
-    editableMask =
-        new Uint8Array(maskData.length);
-
-    for(let i=0;i<maskData.length;i++){
-
-        const probability =
-            1/(1+Math.exp(-maskData[i]));
-
-        editableMask[i] =
-            probability>0.5 ? 1 : 0;
-
-    }
-
-    redrawMask(originalCanvas);
-
-    canvas.addEventListener(
-        "mousedown",
-        ()=>painting=true
+    console.log(
+        "Predicted tumor pixels:",
+        tumorPixels
     );
 
-    canvas.addEventListener(
-        "mouseup",
-        ()=>painting=false
+
+
+    redrawMask(
+        originalCanvas
     );
 
-    canvas.addEventListener(
-        "mouseleave",
-        ()=>painting=false
-    );
 
-    canvas.addEventListener(
-        "mousemove",
-        paintMask
-    );
 
     const output =
         document.getElementById(
             "segmentationOutput"
         );
 
-    output.innerHTML =
-`
-<h3>Segmentation Result</h3>
-`;
+
+    // DO NOT overwrite existing HTML
+    
+
 
     output.appendChild(canvas);
+    canvas.addEventListener(
+    "mousedown",
+    startDrag
+);
 
+    canvas.addEventListener(
+    "mousemove",
+    dragMask
+);
+
+    canvas.addEventListener(
+    "mouseup",
+    endDrag
+);
+
+    canvas.addEventListener(
+    "mouseleave",
+    endDrag
+);
 }
 function softmax(logits){
 
@@ -231,32 +277,28 @@ function analyzeMask(mask){
 
     let tumorPixels = 0;
 
-
     for(let i=0;i<mask.length;i++){
 
         const probability =
-1 / (1 + Math.exp(-mask[i]));
+            1 / (1 + Math.exp(-mask[i]));
 
 
-if(probability > 0.5){
-    tumorPixels++;
-}
+        if(probability > 0.5){
+            tumorPixels++;
+        }
 
     }
 
 
-    const percentage =
-        (tumorPixels / mask.length)*100;
-
-
-    return percentage.toFixed(2);
+    return (
+        tumorPixels / mask.length * 100
+    ).toFixed(2);
 
 }
 // Load both models
 async function loadModels() {
 
     classifierSession =
-        classifierSession =
 await ort.InferenceSession.create(
     "./models/brain_tum_classifier_b3.onnx",
     {
@@ -597,7 +639,10 @@ crop:
 // Example usage
 
 async function analyzeMRI(img) {
-console.log("Starting inference");
+    await modelsReady;
+
+    console.log("Starting inference");
+
 
     const loader =
         document.getElementById("loading-screen");
@@ -606,89 +651,137 @@ console.log("Starting inference");
     loader.style.display = "flex";
 
 
-    // Force browser to render loader
     await new Promise(resolve =>
         requestAnimationFrame(resolve)
     );
 
+
     try {
 
-    const classification =
-    await runClassifier(img);
+
+        // =====================
+        // CLASSIFICATION
+        // =====================
+
+        const classification =
+            await runClassifier(img);
 
 
-const scores = Array.from(classification.data);
-const probabilities = softmax(scores);
+        const scores =
+            Array.from(classification.data);
 
 
-const predictionIndex =
-    scores.indexOf(
-        Math.max(...scores)
-    );
+        const probabilities =
+            softmax(scores);
 
 
-const classes = [
-    "glioma",
-    "meningioma",
-    "no_tumor",
-    "pituitary"
-];
+        const predictionIndex =
+            scores.indexOf(
+                Math.max(...scores)
+            );
 
 
-document.getElementById(
-    "classificationOutput"
-).innerHTML = `
+        document.getElementById(
+            "classificationOutput"
+        ).innerHTML = `
 
-<h3>Classification</h3>
+        <h3>Classification</h3>
 
-<p>
-Prediction:
-<b>${classes[predictionIndex]}</b>
-</p>
-
-<p>
-Scores:
-<br>
-${scores.map(
-    (x,i)=>classes[i]+": "+x.toFixed(4)
-).join("<br>")}
-</p>
-
-<p>
-Softmax Probabilities(Classification Confidence):
-<br>
-${probabilities.map(
-    (x,i)=>classes[i]+": "+(x*100).toFixed(2)+"%"
-).join("<br>")}
-</p>
-
-`;
+        <p>
+        Prediction:
+        <b>${classes[predictionIndex]}</b>
+        </p>
 
 
+        <p>
+        Scores:
+        <br>
+        ${
+            scores.map(
+                (x,i)=>
+                classes[i]+": "+x.toFixed(4)
+            ).join("<br>")
+        }
+        </p>
 
-    // Segmentation
-const result = await runSegmenter(img);
 
-const tumorArea =
-    analyzeMask(result.mask.data);
+        <p>
+        Softmax Probabilities:
+        <br>
+        ${
+            probabilities.map(
+                (x,i)=>
+                classes[i]+": "+
+                (x*100).toFixed(2)+"%"
+            ).join("<br>")
+        }
+        </p>
 
-document.getElementById(
-    "segmentationOutput"
-).innerHTML = `
-<h3>Segmentation Result</h3>
+        `;
 
-<p>
-Tumor Pixel Area:
-${tumorArea}%
-</p>
-`;
 
-displayMask(
-    result.mask.data,
-    result.displayCanvas,
-    result.crop
-);
+
+        // =====================
+        // SEGMENTATION
+        // =====================
+
+        const result =
+            await runSegmenter(img);
+
+
+
+        console.log(
+            "Segmentation output:",
+            result.mask.dims,
+            result.mask.data.length
+        );
+
+
+        const tumorArea =
+            analyzeMask(
+                result.mask.data
+            );
+
+
+        const segmentationOutput =
+            document.getElementById(
+                "segmentationOutput"
+            );
+
+
+        // Clear old result
+        segmentationOutput.innerHTML = `
+
+        <h3>Segmentation Result</h3>
+
+        <p>
+        Tumor Pixel Area:
+        <b>${tumorArea}%</b>
+        </p>
+
+        `;
+
+
+        // Add canvas
+        displayMask(
+            result.mask.data,
+            result.displayCanvas
+        );
+
+
     }
+
+
+    catch(error){
+
+        console.error(
+            "MRI analysis failed:",
+            error
+        );
+
+    }
+
+
     finally {
 
         loader.style.display = "none";
@@ -697,8 +790,8 @@ displayMask(
 
 }
 
-
 // Load models when page starts
 
-loadModels();
+modelsReady = loadModels();
+
 window.analyzeMRI = analyzeMRI;
