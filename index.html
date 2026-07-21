@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+
+#loading-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.8);
+    z-index: 9999;
+
+    justify-content: center;
+    align-items: center;
+}
+
+
+.spinner {
+    width: 60px;
+    height: 60px;
+
+    border: 8px solid #ddd;
+    border-top: 8px solid #3498db;
+
+    border-radius: 50%;
+
+    animation: spin 1s linear infinite;
+}
+
+
+@keyframes spin {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+</style>
+<head>
+<title>MRI Website</title>
+</head>
+
+<body>
+    <p>Welcome to the MRI Website! Please upload an MRI image to analyze.</p>
+    <p>Here, you can view the uploaded image and see the analysis results.</p>
+    <p>Note: The analysis may take a few seconds, so please be patient.
+    Additionally, the image should be in a supported format (e.g., PNG, JPEG).</p>
+    <p>Disclaimer: This website is for educational
+    and annotation assistance purposes only and
+    should not be used for medical diagnosis or treatment.
+    Always consult a healthcare professional for medical advice.</p>
+    <p>The models were trained on the BRISC2025 dataset, which holds roughly 5,000 training images and 1,000 validation images.</p>
+<div id="loading-screen">
+    <div class="spinner"></div>
+</div>
+<button id="uploadButton">
+Upload MRI Image
+</button>
+
+
+<div id="imageDisplay">
+Image will be displayed here
+</div>
+
+
+<div id="classificationOutput">
+Classification results will be displayed here
+</div>
+
+
+<div id="segmentationOutput">
+Segmentation results will be displayed here
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+<script type="module" src="main.js"></script>
+<script> 
+uploadButton.addEventListener(
+"click",
+()=>{
+
+    const fileInput =
+    document.createElement("input");
+
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+
+    fileInput.click();
+
+
+    fileInput.onchange = (event)=>{
+
+        const file =
+        event.target.files[0];
+
+
+        if(file){
+
+            const img =
+            new Image();
+
+
+            img.src =
+            URL.createObjectURL(file);
+
+
+            // PUT IT HERE
+            img.onload = async () => {
+
+                imageDisplay.innerHTML = "";
+
+                imageDisplay.appendChild(img);
+
+
+                await analyzeMRI(img);
+
+            };
+
+        }
+
+    };
+
+});
+   </script>
+
+</body>
+</html>
