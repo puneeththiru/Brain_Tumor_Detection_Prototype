@@ -66,11 +66,10 @@ Upload MRI Image
 Image will be displayed here
 </div>
 
-
+<div id="inferenceStatus">Inference Not Started</div>
 <div id="classificationOutput">
 Classification results will be displayed here
 </div>
-
 
 <div id="segmentationOutput">
 Segmentation results will be displayed here
@@ -116,7 +115,10 @@ uploadButton.addEventListener(
 
                 imageDisplay.appendChild(img);
 
+                document.getElementById("inferenceStatus").innerText ="Inference Started";
 
+                await new Promise(resolve =>
+        requestAnimationFrame(resolve));
                 await analyzeMRI(img);
 
             };

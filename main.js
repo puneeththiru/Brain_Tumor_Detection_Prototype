@@ -640,9 +640,9 @@ crop:
 
 async function analyzeMRI(img) {
     await modelsReady;
-
+    
     console.log("Starting inference");
-
+    
 
     const loader =
         document.getElementById("loading-screen");
