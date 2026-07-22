@@ -574,17 +574,14 @@ return {
 // CLASSIFICATION
 // ==========================
 
-async function runClassifier(img) {
-
-    const input =
-        await imageToTensor(img);
+async function runClassifier(imgTensor) {
 
 
     const feeds = {};
 
     feeds[
         classifierSession.inputNames[0]
-    ] = input.tensor;
+    ] = imgTensor.tensor;
 
 
     const results =
@@ -603,16 +600,13 @@ async function runClassifier(img) {
 // SEGMENTATION
 // ==========================
 
-async function runSegmenter(img){
-
-    const input =
-        await imageToTensor(img);
+async function runSegmenter(imgTensor){
 
     const feeds = {};
 
     feeds[
         segmenterSession.inputNames[0]
-    ] = input.tensor;
+    ] = imgTensor.tensor;
 
     const results =
         await segmenterSession.run(feeds);
@@ -625,10 +619,10 @@ async function runSegmenter(img){
             ],
 
         displayCanvas:
-    input.displayCanvas,
+    imgTensor.displayCanvas,
 
 crop:
-    input.crop
+    imgTensor.crop
 
     };
 
@@ -657,14 +651,14 @@ async function analyzeMRI(img) {
 
 
     try {
-
+        const input = await imageToTensor(img);
 
         // =====================
         // CLASSIFICATION
         // =====================
 
         const classification =
-            await runClassifier(img);
+            await runClassifier(input);
 
 
         const scores =
@@ -706,7 +700,7 @@ async function analyzeMRI(img) {
 
 
         <p>
-        Softmax Probabilities:
+        Softmax Probabilities (Classifier's Confidence):
         <br>
         ${
             probabilities.map(
@@ -726,7 +720,7 @@ async function analyzeMRI(img) {
         // =====================
 
         const result =
-            await runSegmenter(img);
+            await runSegmenter(input);
 
 
 
@@ -789,7 +783,58 @@ async function analyzeMRI(img) {
     }
 
 }
+//Dicom section
+const dicomInput =
+    document.getElementById("dicomUpload");
 
+const uploadButton =
+    document.getElementById("uploadDicomButton");
+
+uploadButton.addEventListener(
+    "click",
+    () => dicomInput.click()
+);
+
+dicomInput.addEventListener(
+    "change",
+    loadDicomSeries
+);
+async function loadDicomSeries(event){
+
+    const files =
+        Array.from(event.target.files);
+
+    if(files.length === 0)
+        return;
+
+    document.getElementById(
+        "dicomStatus"
+    ).innerHTML =
+        `Loading ${files.length} DICOM files...`;
+
+    // Sort alphabetically for now.
+    // Later this will be replaced with sorting
+    // using DICOM metadata.
+    files.sort((a,b)=>
+        a.name.localeCompare(b.name)
+    );
+
+    console.log(
+        "Loaded DICOM files:",
+        files.length
+    );
+
+    console.log(files);
+
+    // Store for reconstruction later
+    window.currentDicomSeries =
+        files;
+
+    document.getElementById(
+        "dicomStatus"
+    ).innerHTML =
+        `${files.length} slices loaded.`;
+}
 // Load models when page starts
 
 modelsReady = loadModels();

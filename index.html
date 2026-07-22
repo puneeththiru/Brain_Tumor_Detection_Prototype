@@ -74,8 +74,21 @@ Classification results will be displayed here
 <div id="segmentationOutput">
 Segmentation results will be displayed here
 </div>
+<p>Under construction</p>
 
+<input
+    type="file"
+    id="dicomUpload"
+    accept=".dcm"
+    multiple
+    style="display:none"
+>
 
+<button id="uploadDicomButton">
+    Upload DICOM Series
+</button>
+
+<div id="dicomStatus"></div>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 <script type="module" src="main.js"></script>
 <script> 
