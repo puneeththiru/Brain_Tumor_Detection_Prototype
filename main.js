@@ -312,7 +312,8 @@ await ort.InferenceSession.create(
     }
 );
     console.log("Classifier loaded");
-
+    document.getElementById("classificationStatus"
+    ).innerHTML = "Classification Model Loaded";
 
     segmenterSession =
         await ort.InferenceSession.create(
@@ -329,6 +330,8 @@ await ort.InferenceSession.create(
 );
 
     console.log("Segmenter loaded");
+    document.getElementById("segmentationStatus"
+    ).innerHTML = "Segmentation Model Loaded";
 }
 
 function foregroundCrop(rgb, width, height, margin=10){
@@ -631,8 +634,9 @@ crop:
 
 
 // Example usage
-
-async function analyzeMRI(img) {
+//force the inference to be asynchronous
+//and allow the progress bar to update in real-time
+async function analyzeMRI(img, progressCallback) {
     await modelsReady;
     
     console.log("Starting inference");
@@ -651,12 +655,20 @@ async function analyzeMRI(img) {
 
 
     try {
+        //this is to ensure that the progress bar updates before the inference starts
+        await new Promise(resolve =>
+            requestAnimationFrame(resolve)
+        );
+        progressCallback(0, "Converting image to tensor...");
         const input = await imageToTensor(img);
 
         // =====================
         // CLASSIFICATION
         // =====================
-
+        await new Promise(resolve =>
+            requestAnimationFrame(resolve)
+        );
+        progressCallback(50, "Running classification...");
         const classification =
             await runClassifier(input);
 
@@ -718,7 +730,7 @@ async function analyzeMRI(img) {
         // =====================
         // SEGMENTATION
         // =====================
-
+        progressCallback(100, "Running segmentation...");
         const result =
             await runSegmenter(input);
 
@@ -781,7 +793,7 @@ async function analyzeMRI(img) {
         loader.style.display = "none";
 
     }
-
+    progressCallback(100, "Inference complete.");
 }
 //Dicom section
 const dicomInput =
