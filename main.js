@@ -647,7 +647,10 @@ async function analyzeMRI(img, progressCallback) {
 
 
     loader.style.display = "flex";
-
+    const bar = document.getElementById("myProgressBar");
+    bar.style.animation = "pulse 2s infinite";
+    const otherBar = document.querySelector(".progress-inner");
+    const progressLabel = document.getElementById("progressLabel");
 
     await new Promise(resolve =>
         requestAnimationFrame(resolve)
@@ -656,21 +659,18 @@ async function analyzeMRI(img, progressCallback) {
 
     try {
         //this is to ensure that the progress bar updates before the inference starts
-        await new Promise(resolve =>
-            requestAnimationFrame(resolve)
-        );
-        progressCallback(0, "Converting image to tensor...");
+        progressCallback(20, "Converting image to tensor...");
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
         const input = await imageToTensor(img);
 
         // =====================
         // CLASSIFICATION
         // =====================
-        await new Promise(resolve =>
-            requestAnimationFrame(resolve)
-        );
         progressCallback(50, "Running classification...");
-        const classification =
-            await runClassifier(input);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        const classification = await runClassifier(input);
 
 
         const scores =
@@ -730,11 +730,12 @@ async function analyzeMRI(img, progressCallback) {
         // =====================
         // SEGMENTATION
         // =====================
-        progressCallback(100, "Running segmentation...");
-        const result =
-            await runSegmenter(input);
+        progressCallback(75, "Running segmentation...");
+        await new Promise(resolve => requestAnimationFrame(resolve));
 
+        const result = await runSegmenter(input);
 
+        progressCallback(100, "Inference complete.");
 
         console.log(
             "Segmentation output:",
@@ -791,7 +792,7 @@ async function analyzeMRI(img, progressCallback) {
     finally {
 
         loader.style.display = "none";
-
+        bar.style.animation = "none";
     }
     progressCallback(100, "Inference complete.");
 }

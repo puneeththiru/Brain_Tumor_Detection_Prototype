@@ -4,10 +4,29 @@
 .loadStatus {
     text-align: right;
 }
+.progress-container {
+  width: 100%;
+  background-color: #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden; /* Keeps inner bar within rounded corners */
+}
+
+.progress-inner {
+  height: 20px;
+  display: block;
+  background: linear-gradient(to right, #ff7f50, #ff4757); /* Gradient inner color */
+  transition: width 0.3s ease; /* Smooth loading animation */
+}
+
 .progressBar {
     display: block;
     width: 100%;
     background-color: #ddd;
+}
+@keyframes pulse{
+    0% { opacity:0.1; }
+    50% { opacity:1; }
+    100% { opacity:0.1; }
 }
 .p{
    text-align: justify; 
@@ -18,7 +37,7 @@
     inset: 0;
     background: rgba(255,255,255,0.8);
     z-index: 9999;
-
+    
     justify-content: center;
     align-items: center;
 }
@@ -68,6 +87,10 @@
     <div class="spinner"></div>
 </div>
 <progress id="myProgressBar" class="progressBar" value="0" max="100"></progress>
+<div class="progress-container">
+  <div class="progress-inner" style="width: 0%;"></div>
+</div>
+<div id="progressLabel">0%</div>
 <div id="statusText">0%</div>
 <button id="uploadButton">
 Upload MRI Image
@@ -119,8 +142,10 @@ uploadButton.addEventListener(
 "click",
 ()=>{
     const progressBar = document.getElementById("myProgressBar");
+    const otherBar = document.querySelector(".progress-inner");
     const statusText = document.getElementById("statusText");
-    
+    const progressLabel = document.getElementById("progressLabel");
+
     const fileInput =
     document.createElement("input");
 
@@ -159,6 +184,8 @@ uploadButton.addEventListener(
         requestAnimationFrame(resolve));
                 await analyzeMRI(img, (progress, message) => {
                     progressBar.value = progress;
+                    otherBar.style.width = `${progress}%`;
+                    otherBar.innerText = progress + "%" +" - "+ message; 
                     statusText.innerText = `${progress}% - ${message}`;
                 });
 
