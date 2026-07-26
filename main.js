@@ -1,70 +1,265 @@
+
 let classifierSession;
 let segmenterSession;
 let editableMask = null;
 let segmentationCanvas = null;
 let segmentationCtx = null;
 let lastOriginalCanvas = null;
-
+let dotVisibility = 0;
 let cropInfo = null;
 let modelsReady;
 let dragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
-
 let maskOffsetX = 0;
 let maskOffsetY = 0;
+let controlPoints = [];
+let selectedPoint = null;
+let numImageInput = 0;
 const classes = [
     "glioma",
     "meningioma",
     "no_tumor",
     "pituitary"
 ];
-function redrawMask(originalCanvas){
+let history = [];
+let historyIndex = -1;
+function saveHistory() {
 
-    if(!segmentationCtx || !editableMask)
+    // Remove future states if we undo then edit
+    history =
+        history.slice(0, historyIndex + 1);
+
+    // Save current mask and points
+    history.push({
+        mask: new Uint8Array(editableMask),
+        points: controlPoints.map(p => ({
+            x: p.x,
+            y: p.y
+        })),
+        offsetX: maskOffsetX,
+        offsetY: maskOffsetY
+    });
+
+    historyIndex++;
+
+}
+function undoEdit() {
+
+    if(historyIndex <= 0){
+        console.log("Nothing to undo");
         return;
+    }
+
+    historyIndex--;
+
+    const state = history[historyIndex];
+
+    editableMask =
+        new Uint8Array(state.mask);
+
+    controlPoints =
+        state.points.map(p => ({
+            x:p.x,
+            y:p.y
+        }));
+
+    maskOffsetX = state.offsetX;
+    maskOffsetY = state.offsetY;
 
 
-    segmentationCtx.clearRect(
-        0,
-        0,
-        512,
-        512
+    redrawMask(lastOriginalCanvas);
+
+}
+function contourToMask(controlPoints) {
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, 512, 512);
+
+    ctx.fillStyle = "white";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        controlPoints[0].x,
+        controlPoints[0].y
     );
 
+    for (let i = 1; i < controlPoints.length; i++) {
 
-    segmentationCtx.drawImage(
-        originalCanvas,
-        0,
-        0,
-        512,
-        512
-    );
-
-
-    const image =
-        segmentationCtx.getImageData(
-            0,
-            0,
-            512,
-            512
+        ctx.lineTo(
+            controlPoints[i].x,
+            controlPoints[i].y
         );
 
+    }
 
-    for(let y=0;y<512;y++){
+    ctx.closePath();
 
-    for(let x=0;x<512;x++){
+    ctx.fill();
 
+    const img =
+        ctx.getImageData(0,0,512,512).data;
 
-        const srcX =
-            x - maskOffsetX;
+    const mask =
+        new Uint8Array(512*512);
 
+    for(let i=0;i<mask.length;i++){
 
-        const srcY =
-            y - maskOffsetY;
+        mask[i] =
+            img[i*4] > 0 ? 1 : 0;
 
+    }
 
-        if(
+    return mask;
+
+}
+function traceContour(mask) {
+
+    const W = 512;
+    const H = 512;
+
+    // Find first foreground pixel
+    let sx = -1;
+    let sy = -1;
+
+    outer:
+    for (let y = 1; y < H - 1; y++) {
+
+        for (let x = 1; x < W - 1; x++) {
+
+            if (mask[y * W + x]) {
+
+                sx = x;
+                sy = y;
+
+                break outer;
+
+            }
+
+        }
+
+    }
+
+    if (sx === -1)
+        return [];
+
+    const dirs = [
+
+        [ 1, 0],
+        [ 1, 1],
+        [ 0, 1],
+        [-1, 1],
+        [-1, 0],
+        [-1,-1],
+        [ 0,-1],
+        [ 1,-1]
+
+    ];
+
+    let contour = [];
+
+    let x = sx;
+    let y = sy;
+
+    let previousDir = 6;
+
+    do{
+
+        contour.push({
+            x,
+            y
+        });
+
+        let found = false;
+
+        for(let k=0;k<8;k++){
+
+            const dir =
+                (previousDir + k) % 8;
+
+            const nx =
+                x + dirs[dir][0];
+
+            const ny =
+                y + dirs[dir][1];
+
+            if(
+
+                nx<0 ||
+                ny<0 ||
+                nx>=W ||
+                ny>=H
+
+            )
+                continue;
+
+            if(mask[ny*W+nx]){
+
+                x = nx;
+                y = ny;
+
+                previousDir =
+                    (dir+5)%8;
+
+                found = true;
+
+                break;
+
+            }
+
+        }
+
+        if(!found)
+            break;
+
+    }
+
+    while(
+
+        x!==sx ||
+        y!==sy
+
+    );
+
+    return contour;
+
+}
+function redrawMask(originalCanvas) {
+
+    if (!segmentationCtx || !editableMask)
+        return;
+
+    const W = originalCanvas.width;
+const H = originalCanvas.height;
+
+segmentationCtx.clearRect(0,0,W,H);
+
+segmentationCtx.drawImage(
+    originalCanvas,
+    0,
+    0
+);
+    // Make everything drawn after this 20% opaque
+    segmentationCtx.globalAlpha = 0.2;
+    segmentationCtx.fillStyle = "red";
+
+    const scaleX = cropInfo.width / 512;
+const scaleY = cropInfo.height / 512;
+
+for (let y = 0; y < 512; y++) {
+
+    for (let x = 0; x < 512; x++) {
+
+        const srcX = x - maskOffsetX;
+        const srcY = y - maskOffsetY;
+
+        if (
             srcX < 0 ||
             srcY < 0 ||
             srcX >= 512 ||
@@ -72,92 +267,316 @@ function redrawMask(originalCanvas){
         )
             continue;
 
-
-
         const index =
-            Math.floor(srcY)*512 +
+            Math.floor(srcY) * 512 +
             Math.floor(srcX);
 
+        if (editableMask[index] !== 1)
+            continue;
 
+        const drawX =
+            cropInfo.x + x * scaleX;
 
-        if(editableMask[index] === 1){
+        const drawY =
+            cropInfo.y + y * scaleY;
 
-            const pixel =
-                (y*512+x)*4;
-
-
-            image.data[pixel] = 255;
-            image.data[pixel+1] = 0;
-            image.data[pixel+2] = 0;
-            image.data[pixel+3] = 120;
-
-        }
+        segmentationCtx.fillRect(
+            drawX,
+            drawY,
+            scaleX,
+            scaleY
+        );
 
     }
 
 }
 
+    // Restore normal drawing
+    segmentationCtx.fillStyle = "white";
+    segmentationCtx.globalAlpha = 1;
+    if(dotVisibility%2 === 0){
+segmentationCtx.fillStyle = "rgba(255,255,255,1)";
+    }
+    else{
+segmentationCtx.fillStyle = "rgba(255,255,255,0)";
+    }
+for (const p of controlPoints) {
 
-    segmentationCtx.putImageData(
-        image,
-        0,
-        0
+    segmentationCtx.beginPath();
+
+    const drawX =
+    cropInfo.x +
+    (p.x + maskOffsetX) * scaleX;
+
+const drawY =
+    cropInfo.y +
+    (p.y + maskOffsetY) * scaleY;
+
+segmentationCtx.beginPath();
+
+segmentationCtx.arc(
+
+    drawX,
+
+    drawY,
+
+    3,
+
+    0,
+
+    Math.PI * 2
+
+);
+
+
+    segmentationCtx.fill();
+
+}
+}
+function getBoundary(mask) {
+
+    const boundary = [];
+
+    for (let y = 1; y < 511; y++) {
+
+        for (let x = 1; x < 511; x++) {
+
+            const i = y * 512 + x;
+
+            if (mask[i] !== 1)
+                continue;
+
+            if (
+
+                mask[i - 1] === 0 ||
+                mask[i + 1] === 0 ||
+
+                mask[i - 512] === 0 ||
+                mask[i + 512] === 0 ||
+
+                mask[i - 513] === 0 ||
+                mask[i - 511] === 0 ||
+
+                mask[i + 511] === 0 ||
+                mask[i + 513] === 0
+
+            ) {
+
+                boundary.push({
+                    x,
+                    y
+                });
+
+            }
+
+        }
+
+    }
+
+    return boundary;
+
+}
+function computePerimeter(boundary) {
+
+    let perimeter = 0;
+
+    for (let i = 0; i < boundary.length; i++) {
+
+        const p1 = boundary[i];
+
+        const p2 = boundary[
+            (i + 1) % boundary.length
+        ];
+
+        perimeter += Math.hypot(
+
+            p2.x - p1.x,
+
+            p2.y - p1.y
+
+        );
+
+    }
+
+    return perimeter;
+
+}
+function generateControlPoints(mask){
+
+    const contour =
+        traceContour(mask);
+
+    if(contour.length===0)
+        return [];
+
+    let perimeter = 0;
+
+    for(let i=0;i<contour.length;i++){
+
+        const a =
+            contour[i];
+
+        const b =
+            contour[
+                (i+1)%contour.length
+            ];
+
+        perimeter += Math.hypot(
+
+            b.x-a.x,
+
+            b.y-a.y
+
+        );
+
+    }
+
+    const spacing = 10;
+
+    const numPoints = Math.max(
+
+        8,
+
+        Math.round(
+            perimeter/spacing
+        )
+
     );
 
+    const step =
+        contour.length/numPoints;
+
+    const controlPoints=[];
+
+    for(let i=0;i<numPoints;i++){
+
+        controlPoints.push({
+
+            ...contour[
+                Math.floor(i*step)
+            ],
+
+            selected:false
+
+        });
+
+    }
+
+    return controlPoints;
+
+}
+function findPoint(mx, my) {
+
+    const scaleX = cropInfo.width / 512;
+    const scaleY = cropInfo.height / 512;
+
+    for (const p of controlPoints) {
+
+        const drawX =
+            cropInfo.x +
+            (p.x + maskOffsetX) * scaleX;
+
+        const drawY =
+            cropInfo.y +
+            (p.y + maskOffsetY) * scaleY;
+
+        if (
+            Math.hypot(
+                mx - drawX,
+                my - drawY
+            ) < 8
+        ) {
+            return p;
+        }
+    }
+
+    return null;
 }
 function startDrag(e){
 
+    const rect =
+        segmentationCanvas.getBoundingClientRect();
+
+    const mx =
+        e.clientX - rect.left;
+
+    const my =
+        e.clientY - rect.top;
+
+    selectedPoint =
+        findPoint(mx,my);
+
     dragging = true;
 
+    dragStartX = mx;
 
-    dragStartX =
-        e.clientX;
-
-    dragStartY =
-        e.clientY;
+    dragStartY = my;
 
 }
-
 
 function dragMask(e){
 
     if(!dragging)
         return;
 
+    const rect =
+        segmentationCanvas.getBoundingClientRect();
+
+    const mx =
+        e.clientX - rect.left;
+
+    const my =
+        e.clientY - rect.top;
 
     const dx =
-        e.clientX - dragStartX;
+        mx - dragStartX;
 
     const dy =
-        e.clientY - dragStartY;
+        my - dragStartY;
+const scaleX = cropInfo.width / 512;
+const scaleY = cropInfo.height / 512;
 
+const modelDX = dx / scaleX;
+const modelDY = dy / scaleY;
+    if(selectedPoint){
 
-    maskOffsetX += dx;
-    maskOffsetY += dy;
+        selectedPoint.x += modelDX;
+selectedPoint.y += modelDY;
 
+editableMask =
+    contourToMask(controlPoints);
 
-    dragStartX =
-        e.clientX;
+redrawMask(lastOriginalCanvas);
+    }
 
-    dragStartY =
-        e.clientY;
+    else{
 
+        maskOffsetX += modelDX;
+maskOffsetY += modelDY;
 
-    redrawMask(
-        lastOriginalCanvas
-    );
+    }
+
+    dragStartX = mx;
+
+    dragStartY = my;
+
+    redrawMask(lastOriginalCanvas);
 
 }
 
 
 function endDrag(){
-
+    if(dragging){
+        saveHistory();
+    }
     dragging = false;
+
+    selectedPoint = null;
 
 }
 function displayMask(
     maskData,
-    originalCanvas
+    originalCanvas, crop
 ){
 
     console.log(
@@ -170,8 +589,8 @@ function displayMask(
         document.createElement("canvas");
 
 
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = originalCanvas.width;
+    canvas.height = originalCanvas.height;
 
 
     const ctx =
@@ -203,7 +622,6 @@ function displayMask(
             1/(1+Math.exp(-maskData[i]));
 
 
-        // Lower threshold because model outputs logits
         if(probability > 0.5){
 
             editableMask[i]=1;
@@ -212,7 +630,7 @@ function displayMask(
         }
 
     }
-
+    
 
     console.log(
         "Predicted tumor pixels:",
@@ -220,12 +638,15 @@ function displayMask(
     );
 
 
-
+    controlPoints = generateControlPoints(editableMask);
     redrawMask(
         originalCanvas
     );
 
+    history = [];
+    historyIndex = -1;
 
+    saveHistory();
 
     const output =
         document.getElementById(
@@ -257,6 +678,7 @@ function displayMask(
     "mouseleave",
     endDrag
 );
+return canvas;
 }
 function softmax(logits){
 
@@ -461,24 +883,7 @@ async function imageToTensor(imageElement) {
     size
 );
 
-const displayCanvas = document.createElement("canvas");
 
-displayCanvas.width = 512;
-displayCanvas.height = 512;
-
-const displayCtx = displayCanvas.getContext("2d");
-
-displayCtx.drawImage(
-    imageElement,
-    cropped.x,
-    cropped.y,
-    cropped.width,
-    cropped.height,
-    0,
-    0,
-    512,
-    512
-);
     const imageData =
         ctx.getImageData(
             0,
@@ -564,9 +969,9 @@ return {
         [1,3,size,size]
     ),
 
-    displayCanvas,
+    originalCanvas,
 
-    crop: displayCrop
+    crop: cropped
 
 };
 }
@@ -615,19 +1020,16 @@ async function runSegmenter(imgTensor){
         await segmenterSession.run(feeds);
 
     return {
+    mask: results[
+        segmenterSession.outputNames[0]
+    ],
 
-        mask:
-            results[
-                segmenterSession.outputNames[0]
-            ],
+    originalCanvas:
+        imgTensor.originalCanvas,
 
-        displayCanvas:
-    imgTensor.displayCanvas,
-
-crop:
-    imgTensor.crop
-
-    };
+    crop:
+        imgTensor.crop
+};
 
 }
 
@@ -637,6 +1039,7 @@ crop:
 //force the inference to be asynchronous
 //and allow the progress bar to update in real-time
 async function analyzeMRI(img, progressCallback) {
+    numImageInput++;
     await modelsReady;
     
     console.log("Starting inference");
@@ -649,7 +1052,6 @@ async function analyzeMRI(img, progressCallback) {
     loader.style.display = "flex";
     const bar = document.getElementById("myProgressBar");
     bar.style.animation = "pulse 2s infinite";
-    const otherBar = document.querySelector(".progress-inner");
     const progressLabel = document.getElementById("progressLabel");
 
     await new Promise(resolve =>
@@ -734,7 +1136,7 @@ async function analyzeMRI(img, progressCallback) {
         await new Promise(resolve => requestAnimationFrame(resolve));
 
         const result = await runSegmenter(input);
-
+        cropInfo = result.crop;
         progressCallback(100, "Inference complete.");
 
         console.log(
@@ -767,18 +1169,42 @@ async function analyzeMRI(img, progressCallback) {
         </p>
 
         `;
+    const container = document.getElementById("canvasButtons");
+    container.innerHTML=""
+    container.style.display = 'flex';
+    container.style.flexDirection = 'row'; // Rows align items horizontally
+    container.style.gap = '10px';          // Adds clean spacing between buttons
 
 
+    const dotButton = document.createElement('button');
+        dotButton.textContent = 'Turn off Dots';
+        dotButton.id = 'dots';
+        dotButton.type = 'button';
+        dotButton.addEventListener('click', () => {dotVisibility++;
+            redrawMask(lastOriginalCanvas)
+;});
+
+    const undoButton = document.createElement('button');
+    undoButton.textContent = 'Undo Edit';
+    undoButton.id = 'undo';
+    undoButton.type = 'button';
+    undoButton.addEventListener(
+    'click',
+    undoEdit
+);
+    container.appendChild(dotButton);
+    container.appendChild(undoButton);
+    if (numImageInput < 2){    
+    document.body.appendChild(container);
+}
         // Add canvas
-        displayMask(
-            result.mask.data,
-            result.displayCanvas
-        );
-
-
+        const segmentationCanvas =
+    displayMask(
+        result.mask.data,
+        result.originalCanvas, result.crop
+    );
     }
-
-
+    
     catch(error){
 
         console.error(
@@ -796,58 +1222,7 @@ async function analyzeMRI(img, progressCallback) {
     }
     progressCallback(100, "Inference complete.");
 }
-//Dicom section
-const dicomInput =
-    document.getElementById("dicomUpload");
 
-const uploadButton =
-    document.getElementById("uploadDicomButton");
-
-uploadButton.addEventListener(
-    "click",
-    () => dicomInput.click()
-);
-
-dicomInput.addEventListener(
-    "change",
-    loadDicomSeries
-);
-async function loadDicomSeries(event){
-
-    const files =
-        Array.from(event.target.files);
-
-    if(files.length === 0)
-        return;
-
-    document.getElementById(
-        "dicomStatus"
-    ).innerHTML =
-        `Loading ${files.length} DICOM files...`;
-
-    // Sort alphabetically for now.
-    // Later this will be replaced with sorting
-    // using DICOM metadata.
-    files.sort((a,b)=>
-        a.name.localeCompare(b.name)
-    );
-
-    console.log(
-        "Loaded DICOM files:",
-        files.length
-    );
-
-    console.log(files);
-
-    // Store for reconstruction later
-    window.currentDicomSeries =
-        files;
-
-    document.getElementById(
-        "dicomStatus"
-    ).innerHTML =
-        `${files.length} slices loaded.`;
-}
 // Load models when page starts
 
 modelsReady = loadModels();

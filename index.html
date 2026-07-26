@@ -87,10 +87,6 @@
     <div class="spinner"></div>
 </div>
 <progress id="myProgressBar" class="progressBar" value="0" max="100"></progress>
-<div class="progress-container">
-  <div class="progress-inner" style="width: 0%;"></div>
-</div>
-<div id="progressLabel">0%</div>
 <div id="statusText">0%</div>
 <button id="uploadButton">
 Upload MRI Image
@@ -111,40 +107,16 @@ Classification results will be displayed here
 <div id="segmentationOutput">
 Segmentation results will be displayed here
 </div>
-<p>Dicom uploading under construction</p>
 
-<input
-    type="file"
-    id="dicomUpload"
-    accept=".dcm"
-    multiple
-    style="display:none"
->
-
-<button id="uploadDicomButton">
-    Upload DICOM Series
-</button>
-
-<div id="dicomStatus"></div>
+<div id="canvasButtons"></div>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 <script type="module" src="main.js"></script>
 <script> 
-//there's one issue:bar only updates after the
-// inference is complete, not during the inference.
-// This is because the inference is a synchronous operation
-// that blocks the main thread,
-// preventing the progress bar from updating
-// until the inference is finished.
-// To fix this, you can use asynchronous operations
-// or web workers to perform the inference in a separate
-// thread, allowing the progress bar to update in real-time.
 uploadButton.addEventListener(
 "click",
 ()=>{
     const progressBar = document.getElementById("myProgressBar");
-    const otherBar = document.querySelector(".progress-inner");
     const statusText = document.getElementById("statusText");
-    const progressLabel = document.getElementById("progressLabel");
 
     const fileInput =
     document.createElement("input");
@@ -184,8 +156,6 @@ uploadButton.addEventListener(
         requestAnimationFrame(resolve));
                 await analyzeMRI(img, (progress, message) => {
                     progressBar.value = progress;
-                    otherBar.style.width = `${progress}%`;
-                    otherBar.innerText = progress + "%" +" - "+ message; 
                     statusText.innerText = `${progress}% - ${message}`;
                 });
 
