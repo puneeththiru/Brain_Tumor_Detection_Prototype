@@ -321,7 +321,7 @@ segmentationCtx.arc(
 
     drawY,
 
-    1,
+    1.5,
 
     0,
 
