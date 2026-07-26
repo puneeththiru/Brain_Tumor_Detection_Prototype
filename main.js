@@ -16,6 +16,7 @@ let maskOffsetY = 0;
 let controlPoints = [];
 let selectedPoint = null;
 let numImageInput = 0;
+let switchButtonClicks = 0;
 const classes = [
     "glioma",
     "meningioma",
@@ -320,7 +321,7 @@ segmentationCtx.arc(
 
     drawY,
 
-    3,
+    1,
 
     0,
 
@@ -1132,6 +1133,11 @@ async function analyzeMRI(img, progressCallback) {
         // =====================
         // SEGMENTATION
         // =====================
+        const container = document.getElementById("canvasButtons");
+        if (predictionIndex === 2){
+            container.innerHTML = ""
+        }
+        if(predictionIndex !== 2){
         progressCallback(75, "Running segmentation...");
         await new Promise(resolve => requestAnimationFrame(resolve));
 
@@ -1169,7 +1175,6 @@ async function analyzeMRI(img, progressCallback) {
         </p>
 
         `;
-    const container = document.getElementById("canvasButtons");
     container.innerHTML=""
     container.style.display = 'flex';
     container.style.flexDirection = 'row'; // Rows align items horizontally
@@ -1181,9 +1186,12 @@ async function analyzeMRI(img, progressCallback) {
         dotButton.id = 'dots';
         dotButton.type = 'button';
         dotButton.addEventListener('click', () => {dotVisibility++;
-            redrawMask(lastOriginalCanvas)
-;});
-
+            switchButtonClicks++;
+            if (switchButtonClicks%2 === 0){
+            dotButton.textContent = 'Turn off Dots';
+        }
+        else{dotButton.textContent = 'Turn on Dots';}
+            redrawMask(lastOriginalCanvas);});
     const undoButton = document.createElement('button');
     undoButton.textContent = 'Undo Edit';
     undoButton.id = 'undo';
@@ -1194,9 +1202,10 @@ async function analyzeMRI(img, progressCallback) {
 );
     container.appendChild(dotButton);
     container.appendChild(undoButton);
-    if (numImageInput < 2){    
+    if (numImageInput < 2 && predictionIndex !== 2){    
     document.body.appendChild(container);
 }
+
         // Add canvas
         const segmentationCanvas =
     displayMask(
@@ -1204,7 +1213,18 @@ async function analyzeMRI(img, progressCallback) {
         result.originalCanvas, result.crop
     );
     }
-    
+    else{
+        const segmentationOutput =
+            document.getElementById(
+                "segmentationOutput"
+            );
+
+
+        // Clear old result
+        segmentationOutput.innerHTML = 'No tumor detected'
+    }
+}
+
     catch(error){
 
         console.error(
