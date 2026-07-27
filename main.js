@@ -17,12 +17,85 @@ let controlPoints = [];
 let selectedPoint = null;
 let numImageInput = 0;
 let switchButtonClicks = 0;
+let fileName = "";
 const classes = [
     "glioma",
     "meningioma",
     "no_tumor",
     "pituitary"
 ];
+function getFileName(file){
+    fileName = file;
+}
+
+function exportCanvasAsImage(filename = fileName) {
+    const maskName = fileName.replace(/\./, "_M.");
+    if (!editableMask || !lastOriginalCanvas || !cropInfo) {
+        console.error("Nothing to export.");
+        return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = lastOriginalCanvas.width;
+    canvas.height = lastOriginalCanvas.height;
+
+    const ctx = canvas.getContext("2d");
+
+    // Black background
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // White mask
+    ctx.fillStyle = "white";
+
+    const scaleX = cropInfo.width / 512;
+    const scaleY = cropInfo.height / 512;
+
+    for (let y = 0; y < 512; y++) {
+
+        for (let x = 0; x < 512; x++) {
+
+            const srcX = x - maskOffsetX;
+            const srcY = y - maskOffsetY;
+
+            if (
+                srcX < 0 ||
+                srcY < 0 ||
+                srcX >= 512 ||
+                srcY >= 512
+            ) {
+                continue;
+            }
+
+            const index =
+                Math.floor(srcY) * 512 +
+                Math.floor(srcX);
+
+            if (editableMask[index] !== 1) {
+                continue;
+            }
+
+            const drawX =
+                cropInfo.x + x * scaleX;
+
+            const drawY =
+                cropInfo.y + y * scaleY;
+
+            ctx.fillRect(
+                drawX,
+                drawY,
+                scaleX,
+                scaleY
+            );
+        }
+    }
+
+    const link = document.createElement("a");
+    link.download = maskName;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+}
+
 let history = [];
 let historyIndex = -1;
 function saveHistory() {
@@ -251,7 +324,7 @@ segmentationCtx.drawImage(
     segmentationCtx.fillStyle = "red";
 
     const scaleX = cropInfo.width / 512;
-const scaleY = cropInfo.height / 512;
+    const scaleY = cropInfo.height / 512;
 
 for (let y = 0; y < 512; y++) {
 
@@ -737,7 +810,8 @@ await ort.InferenceSession.create(
     console.log("Classifier loaded");
     document.getElementById("classificationStatus"
     ).innerHTML = "Classification Model Loaded";
-
+    const classifier = document.getElementById("classificationStatus")
+    classifier.style.animation = 'none';
     segmenterSession =
         await ort.InferenceSession.create(
     "./models/brain_unet_b3.onnx",
@@ -755,6 +829,8 @@ await ort.InferenceSession.create(
     console.log("Segmenter loaded");
     document.getElementById("segmentationStatus"
     ).innerHTML = "Segmentation Model Loaded";
+    const segmenter = document.getElementById("segmentationStatus")
+    segmenter.style.animation = 'none';
 }
 
 function foregroundCrop(rgb, width, height, margin=10){
@@ -1200,8 +1276,16 @@ async function analyzeMRI(img, progressCallback) {
     'click',
     undoEdit
 );
+    const exportButton = document.createElement('button');
+    exportButton.textContent = 'Export as binary mask';
+    exportButton.id = 'export';
+    exportButton.type = 'button';
+    exportButton.addEventListener("click", () => {
+    exportCanvasAsImage();
+});
     container.appendChild(dotButton);
     container.appendChild(undoButton);
+    container.appendChild(exportButton)
     if (numImageInput < 2 && predictionIndex !== 2){    
     document.body.appendChild(container);
 }
@@ -1248,3 +1332,4 @@ async function analyzeMRI(img, progressCallback) {
 modelsReady = loadModels();
 
 window.analyzeMRI = analyzeMRI;
+window.getFileName = getFileName;

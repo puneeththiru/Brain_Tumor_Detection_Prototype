@@ -3,6 +3,7 @@
 <style>
 .loadStatus {
     text-align: right;
+    animation: pulse 2s infinite;
 }
 .progress-container {
   width: 100%;
@@ -70,7 +71,7 @@
 
 </style>
 <head>
-<title>MRI Website</title>
+<title>Brain Tumor Detection and Annotation</title>
 </head>
 
 <body>
@@ -125,7 +126,15 @@ uploadButton.addEventListener(
     fileInput.accept = "image/*";
 
     fileInput.click();
-
+    fileInput.addEventListener('change', (event) => {
+  // Check if at least one file was selected
+  if (event.target.files.length > 0) {
+    // 3. Record the file name
+    const fileName = event.target.files[0].name;
+    getFileName(fileName);
+    console.log("Selected file:", fileName);
+  }
+});
 
     fileInput.onchange = (event)=>{
 
