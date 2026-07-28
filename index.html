@@ -1,22 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
 <style>
-.loadStatus {
-    text-align: right;
-    animation: pulse 2s infinite;
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+
 }
-.progress-container {
-  width: 100%;
-  background-color: #e0e0e0;
-  border-radius: 8px;
-  overflow: hidden; /* Keeps inner bar within rounded corners */
+main{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(90vh - 6rem);
+
+}
+.content{
+    max-width: 40rem;
+    margin-left: 10%;
+    z-index: 999;
+}
+.tag-box{
+    position:relative;
+    width: 18rem;
+    height: 2.5rem;
+    border-radius:50px;
+    background: linear-gradient(to right, #656565, #7f42a7,
+    #6600c5, #47398d, #757575, #656565);
+    background-size: 200%;
+    animation: animationGradient 2.5s linear infinite;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+@keyframes animationGradient{
+    to{
+        background-position: 200%;
+    }
+}
+.tag-box .tag{
+    position: absolute;
+    inset:  3px 3px 3px 3px;
+    background-color: black;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.5s ease;
+}
+.uploadButton{
+    position: relative;
+    width: 18rem;
+    height: 2.5rem;
+
+    border: none;
+    border-radius: 50px;
+
+    background: linear-gradient(
+        to right,
+        #656565,
+        #429da7,
+        #0076c5,
+        #39518d,
+        #757575,
+        #656565
+    );
+
+    background-size: 200%;
+    animation: animationGradient 2.5s linear infinite;
+
+    color: white;
+    cursor: pointer;
+
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+    transition: 0.5s ease;
+}
+.uploadButton:hover{
+    color:greenyellow;
+    box-shadow: 0 0 15px rgba(255,255,255,0.7);
+}
+.uploadButton::before{
+
+    content: "";
+
+    position: absolute;
+
+    inset: 3px;
+
+    background: rgb(3, 28, 52);
+
+    border-radius: 50px;
+
+    z-index: 0;
+
+}
+.uploadButton span{
+
+    position:relative;
+
+    z-index:1;
+
 }
 
-.progress-inner {
-  height: 20px;
-  display: block;
-  background: linear-gradient(to right, #ff7f50, #ff4757); /* Gradient inner color */
-  transition: width 0.3s ease; /* Smooth loading animation */
+.tag-box .tag:hover{
+    color: #aa4ee0;
+    box-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
+.content h1{
+    font-size: 4rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin: 2rem 0;
+    line-height:1.2;
+    text-shadow: 0 0 10px rgba(128, 128, 128, 0.418)
+}
+.description{
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+    max-width: 35rem;
+    color: gray;
+}
+.buttons{
+    display: flex;
+    gap: 1rem;
+}
+.status-container{
+    display: flex;
+    gap: 1rem;          
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;    
+}
+.loadStatus {
+    text-align: right;
+    position: relative;
+    width: 18rem;
+    height: 2.5rem;
+
+    border: none;
+    border-radius: 50px;
+
+    background: linear-gradient(
+        to right,
+        #656565,
+        #a84949,
+        #c51700,
+        #860101,
+        #757575,
+        #656565
+    );
+    background-size: 200%;
+    animation: pulse 2.5s infinite, animationGradient 2.5s linear infinite;
+    color: white;
+
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+.loadStatus::before{
+
+    content: "";
+
+    position: absolute;
+
+    inset: 3px;
+
+    background: rgb(3, 28, 52);
+
+    border-radius: 50px;
+
+    z-index: 0;
+
+}
+.loadStatus span{
+
+    position:relative;
+
+    z-index:1;
+
 }
 
 .progressBar {
@@ -24,6 +190,7 @@
     width: 100%;
     background-color: #ddd;
 }
+
 @keyframes pulse{
     0% { opacity:0.1; }
     50% { opacity:1; }
@@ -31,6 +198,81 @@
 }
 .p{
    text-align: justify; 
+}
+.container{
+    width:100%;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5rem;
+}
+header h1{
+    margin: 0;
+    font-size: 3 rem;
+    font-weight: 300;
+}
+nav{
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    margin-left: -5%;
+}
+nav a{
+    font-size: 1rem;
+    letter-spacing: 0.1rem;
+    transition: color 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+}
+nav a:hover{
+    color: #a7a7a7;
+}
+.btn-signing{
+    background-color: #a7a7a7;
+    color: black;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 2s ease;
+    cursor: pointer;
+}
+.btn-signing:hover{
+    background-color: white;
+}
+body{
+    font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif ;
+    background-color: rgb(3, 28, 52);
+    color: white;
+    min-height: 100vh;
+    line-height: 1.5;
+    text-shadow: 0 0 10px rgba(128, 128, 128, 0.8)
+}
+.image-gradient{
+    position:absolute;
+    top: 0;
+    right: 0;
+    opacity: 0.5;
+    z-index: -1;
+}
+.layer-blur{
+    height: 0;
+    width: 30rem;
+    position:absolute;
+    top: 20%;
+    right: 0;
+    box-shadow: 0 0 700px 15px white;
+    rotate: -30deg;
+    z-index: -1;
 }
 #loading-screen {
     display: none;
@@ -42,8 +284,32 @@
     justify-content: center;
     align-items: center;
 }
+.pushable {
+    background: hsl(279, 100%, 32%);
+    border-radius: 12px;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    outline-offset: 4px;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+    transition: 0.5s ease;
+  }
+  .front {
+    display: block;
+    padding: 12px 42px;
+    border-radius: 12px;
+    font-size: 1.25rem;
+    background: hsl(281, 100%, 47%);
+    color: white;
+    transform: translateY(-6px);
+  }
 
-
+  .pushable:active .front {
+    transform: translateY(-2px);
+  }
+  .pushable:hover{
+    box-shadow: 0 0 15px rgba(255,255,255,0.8);;
+  }
 .spinner {
     width: 60px;
     height: 60px;
@@ -72,11 +338,49 @@
 </style>
 <head>
 <title>Brain Tumor Detection and Annotation</title>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 
 <body>
-    <p>Welcome to the MRI Website! Please upload an MRI image to analyze.</p>
-    <p>Here, you can view the uploaded image and see the analysis results.</p>
+    <img src="gradient.png" alt="gradient" class="image-gradient">
+    <div class= "layer-blur">  </div>
+    <div class="container">
+        <header>
+            <h1 data-aos="fade-down" data-aos-duration = "1500"
+            class="logo">BT-Tracker</h1>
+            <nav data-aos="fade-down" data-aos-duration = "1500">
+                <a href="https://www.medifind.com">Find Radiologists</a>
+            </nav>
+        </header>
+        <div class="content">
+            <div data-aos="fade-zoom-in"
+            data-aos-easing="ease-in-back"
+            data-aos-delay="300"
+            data-aos-offset="0"
+            data-aos-duration = "1500"
+            class="tag-box">
+                <div class="tag">Welcome to</div>
+            </div>
+            <h1 data-aos="fade-zoom-in"
+            data-aos-easing="ease-in-back"
+            data-aos-delay="300"
+            data-aos-offset="0"
+            data-aos-duration = "2000">TTracker</h1>
+            <p data-aos="fade-zoom-in"
+            data-aos-easing="ease-in-back"
+            data-aos-delay="300"
+            data-aos-offset="0"
+            data-aos-duration = "2500"
+            class="description">
+                This is a no-cost website that allows users to
+                detect and classify
+                potential brain tumors in T1 MRI scans.
+                Segmentation results assist users
+                in tumor annotations for export.
+            </p>
+        </div>
+    </div>
+    <p>Please upload an MRI image to analyze.</p>
     <p>Note: The analysis may take a few seconds, so please be patient.
     Additionally, the image should be in a supported format (e.g., PNG, JPEG).</p>
     <p>Disclaimer: This website is for educational
@@ -87,20 +391,28 @@
 <div id="loading-screen">
     <div class="spinner"></div>
 </div>
+<p> </p>
+<div class="status-container">
+
+    <div id="classificationStatus" class="loadStatus">
+        <span>Classifier Not Loaded</span>
+    </div>
+
+    <div id="segmentationStatus" class="loadStatus">
+        <span>Segmentation Model Not Loaded</span>
+    </div>
+
+</div>
 <progress id="myProgressBar" class="progressBar" value="0" max="100"></progress>
 <div id="statusText">0%</div>
-<button id="uploadButton">
-Upload MRI Image
+<button id="uploadButton" class="uploadButton">
+<span>Upload MRI Image</span>
 </button>
 
-
+<div id="inferenceStatus">Inference Not Started</div>
 <div id="imageDisplay">
 Image will be displayed here
 </div>
-
-<div id="inferenceStatus">Inference Not Started</div>
-<div id="classificationStatus" class="loadStatus">Classifier Not Loaded</div>
-<div id="segmentationStatus" class="loadStatus">Segmentation model Not Loaded</div>
 <div id="classificationOutput">
 Classification results will be displayed here
 </div>
@@ -176,6 +488,9 @@ uploadButton.addEventListener(
 
 });
    </script>
-
+      <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+  <script>
+    AOS.init();
+  </script>
 </body>
 </html>

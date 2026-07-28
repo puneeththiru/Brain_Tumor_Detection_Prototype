@@ -809,9 +809,20 @@ await ort.InferenceSession.create(
 );
     console.log("Classifier loaded");
     document.getElementById("classificationStatus"
-    ).innerHTML = "Classification Model Loaded";
+    ).querySelector("span").innerHTML = "Classification Model Loaded";
     const classifier = document.getElementById("classificationStatus")
-    classifier.style.animation = 'none';
+    classifier.style.background = `linear-gradient(
+        to right,
+        #656565,
+        #5ee03d,
+        #30e02a,
+        #0fc22f,
+        #757575,
+        #656565
+    )`;
+    classifier.style.backgroundSize = `200%`;
+    classifier.style.animation = `animationGradient 0.5s linear infinite`;
+    classifier.style.boxShadow= `0 0 15px rgba(255,255,255,0.9)`;
     segmenterSession =
         await ort.InferenceSession.create(
     "./models/brain_unet_b3.onnx",
@@ -828,9 +839,20 @@ await ort.InferenceSession.create(
 
     console.log("Segmenter loaded");
     document.getElementById("segmentationStatus"
-    ).innerHTML = "Segmentation Model Loaded";
+    ).querySelector("span").innerHTML = "Segmentation Model Loaded";
     const segmenter = document.getElementById("segmentationStatus")
-    segmenter.style.animation = 'none';
+    segmenter.style.background = `linear-gradient(
+        to right,
+        #656565,
+        #5ee03d,
+        #30e02a,
+        #0fc22f,
+        #757575,
+        #656565
+    )`;
+    segmenter.style.backgroundSize = `200%`;
+    segmenter.style.animation = `animationGradient 0.5s linear infinite`;
+    segmenter.style.boxShadow= `0 0 15px rgba(255,255,255,0.9)`;
 }
 
 function foregroundCrop(rgb, width, height, margin=10){
@@ -1246,10 +1268,10 @@ async function analyzeMRI(img, progressCallback) {
         <h3>Segmentation Result</h3>
 
         <p>
-        Tumor Pixel Area:
+        Tumor Pixel Area with respect to the image:
         <b>${tumorArea}%</b>
         </p>
-
+        <p>Drag the dots to edit the mask</p>
         `;
     container.innerHTML=""
     container.style.display = 'flex';
@@ -1258,28 +1280,40 @@ async function analyzeMRI(img, progressCallback) {
 
 
     const dotButton = document.createElement('button');
-        dotButton.textContent = 'Turn off Dots';
         dotButton.id = 'dots';
         dotButton.type = 'button';
+        dotButton.className = 'pushable';
+        const dotSpan = document.createElement('span')
+        dotSpan.textContent = 'Turn off Dots';
+        dotSpan.className = 'front';
+        dotButton.appendChild(dotSpan)
         dotButton.addEventListener('click', () => {dotVisibility++;
             switchButtonClicks++;
             if (switchButtonClicks%2 === 0){
-            dotButton.textContent = 'Turn off Dots';
+            dotSpan.textContent = 'Turn off Dots';
         }
-        else{dotButton.textContent = 'Turn on Dots';}
+        else{dotSpan.textContent = 'Turn on Dots';}
             redrawMask(lastOriginalCanvas);});
     const undoButton = document.createElement('button');
-    undoButton.textContent = 'Undo Edit';
     undoButton.id = 'undo';
     undoButton.type = 'button';
+    undoButton.className = 'pushable';
+    const undoSpan = document.createElement('span')
+    undoSpan.textContent = 'Undo Edit';
+    undoSpan.className = 'front';
+    undoButton.appendChild(undoSpan)
     undoButton.addEventListener(
     'click',
     undoEdit
 );
     const exportButton = document.createElement('button');
-    exportButton.textContent = 'Export as binary mask';
     exportButton.id = 'export';
     exportButton.type = 'button';
+    exportButton.className = 'pushable';
+    const exportSpan = document.createElement('span')
+    exportSpan.textContent = 'Export as binary mask';
+    exportSpan.className = 'front';
+    exportButton.appendChild(exportSpan)
     exportButton.addEventListener("click", () => {
     exportCanvasAsImage();
 });
