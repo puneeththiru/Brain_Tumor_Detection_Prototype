@@ -821,7 +821,7 @@ await ort.InferenceSession.create(
         #656565
     )`;
     classifier.style.backgroundSize = `200%`;
-    classifier.style.animation = `animationGradient 0.5s linear infinite`;
+    classifier.style.animation = `animationGradient 0.5s linear infinite, vibrate 1s infinite`;
     classifier.style.boxShadow= `0 0 15px rgba(255,255,255,0.9)`;
     segmenterSession =
         await ort.InferenceSession.create(
@@ -851,7 +851,7 @@ await ort.InferenceSession.create(
         #656565
     )`;
     segmenter.style.backgroundSize = `200%`;
-    segmenter.style.animation = `animationGradient 0.5s linear infinite`;
+    segmenter.style.animation = `animationGradient 0.5s linear infinite, vibrate 1s infinite`;
     segmenter.style.boxShadow= `0 0 15px rgba(255,255,255,0.9)`;
 }
 

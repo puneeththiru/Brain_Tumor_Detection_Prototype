@@ -14,6 +14,9 @@ main{
     min-height: calc(90vh - 6rem);
 
 }
+.workload{
+    text-align: center;
+}
 .content{
     max-width: 40rem;
     margin-left: 10%;
@@ -35,6 +38,14 @@ main{
         background-position: 200%;
     }
 }
+@keyframes vibrate {
+  0% { transform: translate(0, 2); }
+  25% { transform: translate(0, -2px); }
+  50% { transform: translate(0, 2px); }
+  75% { transform: translate(0, -2px); }
+  100% { transform: translate(0, 2px); }
+  
+}
 .tag-box .tag{
     position: absolute;
     inset:  3px 3px 3px 3px;
@@ -49,7 +60,7 @@ main{
     position: relative;
     width: 18rem;
     height: 2.5rem;
-
+    margin: 1rem auto;
     border: none;
     border-radius: 50px;
 
@@ -135,6 +146,7 @@ main{
 }
 .loadStatus {
     text-align: right;
+    margin: 1rem auto;
     position: relative;
     width: 18rem;
     height: 2.5rem;
@@ -188,9 +200,17 @@ main{
 .progressBar {
     display: block;
     width: 100%;
+    max-width: 800px;
+
+    margin: 1rem auto;
+
     background-color: #ddd;
 }
+.statusText{
+    text-align: center;
+    margin: 0.1rem auto;
 
+}
 @keyframes pulse{
     0% { opacity:0.1; }
     50% { opacity:1; }
@@ -255,7 +275,7 @@ body{
     color: white;
     min-height: 100vh;
     line-height: 1.5;
-    text-shadow: 0 0 10px rgba(128, 128, 128, 0.8)
+    text-shadow: 0 0 10px rgba(128, 128, 128, 0.8);
 }
 .image-gradient{
     position:absolute;
@@ -293,6 +313,7 @@ body{
     outline-offset: 4px;
     box-shadow: 0 0 15px rgba(255,255,255,0.3);
     transition: 0.5s ease;
+    margin: 0.5rem auto;
   }
   .front {
     display: block;
@@ -321,7 +342,25 @@ body{
 
     animation: spin 1s linear infinite;
 }
+.info-section{
 
+    max-width: 800px;
+
+    margin: 3rem auto;
+
+    padding: 0 2rem;
+
+    text-align: center;
+
+}
+
+.info-section p{
+
+    margin-bottom: 1.5rem;
+
+    line-height: 1.8;
+
+}
 
 @keyframes spin {
 
@@ -365,7 +404,7 @@ body{
             data-aos-easing="ease-in-back"
             data-aos-delay="300"
             data-aos-offset="0"
-            data-aos-duration = "2000">TTracker</h1>
+            data-aos-duration = "2000">BT-Tracker</h1>
             <p data-aos="fade-zoom-in"
             data-aos-easing="ease-in-back"
             data-aos-delay="300"
@@ -380,15 +419,35 @@ body{
             </p>
         </div>
     </div>
+    <div data-aos="fade-zoom-in"
+            data-aos-easing="ease-in-back"
+            data-aos-delay="300"
+            data-aos-offset="0"
+            data-aos-duration = "2500"
+            class="info-section">
+
     <p>Please upload an MRI image to analyze.</p>
-    <p>Note: The analysis may take a few seconds, so please be patient. 
-    Model Loading automatically starts when you enter the page.
-    The image should be in a supported format (e.g., PNG, JPEG).</p>
-    <p>Disclaimer: This website is for educational
-    and annotation assistance purposes only and
-    should not be used for medical diagnosis or treatment.
-    Always consult a healthcare professional for medical advice.</p>
-    <p>The models were trained on the BRISC2025 dataset, which holds roughly 5,000 training images and 1,000 validation images.</p>
+        <button id="uploadButton" class="uploadButton">
+        <span>Upload MRI Image</span>
+        </button>
+    <p>
+        Note: The analysis may take a few seconds, so please be patient.
+        Model loading automatically starts when you enter the page.
+        The image should be in a supported format (e.g., PNG, JPEG).
+    </p>
+
+    <p>
+        Disclaimer: This website is for educational and annotation assistance
+        purposes only and should not be used for medical diagnosis or treatment.
+        Always consult a healthcare professional for medical advice.
+    </p>
+
+    <p>
+        The models were trained on the BRISC2025 dataset, which contains roughly
+        5,000 training images and 1,000 validation images.
+    </p>
+
+</div>
 <div id="loading-screen">
     <div class="spinner"></div>
 </div>
@@ -405,11 +464,8 @@ body{
 
 </div>
 <progress id="myProgressBar" class="progressBar" value="0" max="100"></progress>
-<div id="statusText">0%</div>
-<button id="uploadButton" class="uploadButton">
-<span>Upload MRI Image</span>
-</button>
-
+<div id="statusText" class="statusText">0%</div>
+<div class="workload">
 <div id="inferenceStatus">Inference Not Started</div>
 <div id="imageDisplay">
 Image will be displayed here
@@ -423,6 +479,7 @@ Segmentation results will be displayed here
 </div>
 
 <div id="canvasButtons"></div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 <script type="module" src="main.js"></script>
 <script> 
