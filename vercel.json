@@ -21,5 +21,11 @@
       "src": "api/vlm.js",
       "use": "@vercel/node"
     }
+  ],
+  "routes": [
+    {
+      "src": "/api/vlm",
+      "dest": "/api/vlm.js"
+    }
   ]
 }
