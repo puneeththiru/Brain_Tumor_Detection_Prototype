@@ -2,15 +2,15 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
-      "src": "*.html",
+      "src": "index.html",
       "use": "@vercel/static"
     },
     {
-      "src": "*.js",
+      "src": "main.js",
       "use": "@vercel/static"
     },
     {
-      "src": "*.png",
+      "src": "gradient.png",
       "use": "@vercel/static"
     },
     {
@@ -18,7 +18,7 @@
       "use": "@vercel/static"
     },
     {
-      "src": "api/*.js",
+      "src": "api/vlm.js",
       "use": "@vercel/node"
     }
   ]
