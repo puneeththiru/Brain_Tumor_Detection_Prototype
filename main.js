@@ -6,6 +6,7 @@ let segmentationCanvas = null;
 let segmentationCtx = null;
 let lastOriginalCanvas = null;
 let dotVisibility = 0;
+let maskOpacity = 0.2;
 let cropInfo = null;
 let modelsReady;
 let dragging = false;
@@ -18,6 +19,7 @@ let selectedPoint = null;
 let numImageInput = 0;
 let switchButtonClicks = 0;
 let fileName = "";
+
 const classes = [
     "glioma",
     "meningioma",
@@ -320,7 +322,7 @@ segmentationCtx.drawImage(
     0
 );
     // Make everything drawn after this 20% opaque
-    segmentationCtx.globalAlpha = 0.2;
+    segmentationCtx.globalAlpha = maskOpacity;
     segmentationCtx.fillStyle = "red";
 
     const scaleX = cropInfo.width / 512;
@@ -1181,12 +1183,11 @@ async function analyzeMRI(img, progressCallback) {
         const probabilities =
             softmax(scores);
 
-
         const predictionIndex =
             scores.indexOf(
                 Math.max(...scores)
             );
-
+        const prediction = classes[predictionIndex];
 
         document.getElementById(
             "classificationOutput"
@@ -1232,6 +1233,7 @@ async function analyzeMRI(img, progressCallback) {
         // SEGMENTATION
         // =====================
         const container = document.getElementById("canvasButtons");
+        let tumorArea = 0;
         if (predictionIndex === 2){
             container.innerHTML = ""
         }
@@ -1250,7 +1252,7 @@ async function analyzeMRI(img, progressCallback) {
         );
 
 
-        const tumorArea =
+        tumorArea =
             analyzeMask(
                 result.mask.data
             );
@@ -1320,6 +1322,28 @@ async function analyzeMRI(img, progressCallback) {
     container.appendChild(dotButton);
     container.appendChild(undoButton);
     container.appendChild(exportButton)
+    const slider = document.createElement('div');
+    const sliderInput = document.createElement('input')
+    sliderInput.type = 'range';
+    sliderInput.min = 0;
+    sliderInput.max = 1;
+    sliderInput.step = 0.05;
+
+    sliderInput.value = 0.2;
+    sliderInput.className = 'numeric-slider'
+
+    const valueDisplay = document.createElement('p');
+    valueDisplay.innerHTML = `Value: <strong>${sliderInput.value}</strong>`;
+
+    sliderInput.addEventListener('input', (event) => {
+    valueDisplay.innerHTML = `Value: <strong>${event.target.value}</strong>`;
+    maskOpacity = event.target.value;
+    redrawMask(lastOriginalCanvas);
+    });
+
+    slider.appendChild(sliderInput);
+    slider.appendChild(valueDisplay);
+    document.body.appendChild(slider);
     if (numImageInput < 2 && predictionIndex !== 2){    
     document.body.appendChild(container);
 }
@@ -1341,6 +1365,16 @@ async function analyzeMRI(img, progressCallback) {
         // Clear old result
         segmentationOutput.innerHTML = 'No tumor detected'
     }
+    progressCallback(100, "Inference complete.");
+
+    return {
+    prediction,
+    predictionIndex,
+    scores,
+    probabilities,
+    tumorArea,
+    canvas: segmentationCanvas
+};
 }
 
     catch(error){
@@ -1358,7 +1392,6 @@ async function analyzeMRI(img, progressCallback) {
         loader.style.display = "none";
         bar.style.animation = "none";
     }
-    progressCallback(100, "Inference complete.");
 }
 
 // Load models when page starts

@@ -10,7 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "groq": "^6.9.1",
+    "groq-sdk": "^1.5.0",
     "node": "^26.5.0",
     "onnxruntime-web": "^1.27.0"
   }
