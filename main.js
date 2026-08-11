@@ -102,7 +102,7 @@ let history = [];
 let historyIndex = -1;
 function saveHistory() {
 
-    // Remove future states if we undo then edit
+    
     history =
         history.slice(0, historyIndex + 1);
 
@@ -371,10 +371,10 @@ for (let y = 0; y < 512; y++) {
     segmentationCtx.fillStyle = "white";
     segmentationCtx.globalAlpha = 1;
     if(dotVisibility%2 === 0){
-segmentationCtx.fillStyle = "rgba(255,255,255,1)";
+segmentationCtx.fillStyle = "rgba(255,255,255,0)";
     }
     else{
-segmentationCtx.fillStyle = "rgba(255,255,255,0)";
+segmentationCtx.fillStyle = "rgba(255,255,255,1)";
     }
 for (const p of controlPoints) {
 
@@ -727,12 +727,7 @@ function displayMask(
     const output =
         document.getElementById(
             "segmentationOutput"
-        );
-
-
-    // DO NOT overwrite existing HTML
-    
-
+        );    
 
     output.appendChild(canvas);
     canvas.addEventListener(
@@ -1079,9 +1074,7 @@ return {
 
 
 
-// ==========================
 // CLASSIFICATION
-// ==========================
 
 async function runClassifier(imgTensor) {
 
@@ -1105,9 +1098,7 @@ async function runClassifier(imgTensor) {
 
 
 
-// ==========================
 // SEGMENTATION
-// ==========================
 
 async function runSegmenter(imgTensor){
 
@@ -1136,9 +1127,7 @@ async function runSegmenter(imgTensor){
 
 
 
-// Example usage
-//force the inference to be asynchronous
-//and allow the progress bar to update in real-time
+
 async function analyzeMRI(img, progressCallback) {
     numImageInput++;
     await modelsReady;
@@ -1161,15 +1150,12 @@ async function analyzeMRI(img, progressCallback) {
 
 
     try {
-        //this is to ensure that the progress bar updates before the inference starts
         progressCallback(20, "Converting image to tensor...");
         await new Promise(resolve => requestAnimationFrame(resolve));
 
         const input = await imageToTensor(img);
 
-        // =====================
         // CLASSIFICATION
-        // =====================
         progressCallback(50, "Running classification...");
         await new Promise(resolve => requestAnimationFrame(resolve));
 
@@ -1229,9 +1215,7 @@ async function analyzeMRI(img, progressCallback) {
 
 
 
-        // =====================
         // SEGMENTATION
-        // =====================
         const container = document.getElementById("canvasButtons");
         let tumorArea = 0;
         if (predictionIndex === 2){
@@ -1264,7 +1248,6 @@ async function analyzeMRI(img, progressCallback) {
             );
 
 
-        // Clear old result
         segmentationOutput.innerHTML = `
 
         <h3>Segmentation Result</h3>
@@ -1273,12 +1256,12 @@ async function analyzeMRI(img, progressCallback) {
         Tumor Pixel Area with respect to the image:
         <b>${tumorArea}%</b>
         </p>
-        <p>Drag the dots to edit the mask</p>
+        <p>Click the "turn on dots button" and drag the dots to edit the mask</p>
         `;
     container.innerHTML=""
     container.style.display = 'flex';
     container.style.flexDirection = 'row'; // Rows align items horizontally
-    container.style.gap = '10px';          // Adds clean spacing between buttons
+    container.style.gap = '5px';          // Adds clean spacing between buttons
 
 
     const dotButton = document.createElement('button');
@@ -1286,15 +1269,15 @@ async function analyzeMRI(img, progressCallback) {
         dotButton.type = 'button';
         dotButton.className = 'pushable';
         const dotSpan = document.createElement('span')
-        dotSpan.textContent = 'Turn off Dots';
+        dotSpan.textContent = 'Turn on Dots';
         dotSpan.className = 'front';
         dotButton.appendChild(dotSpan)
         dotButton.addEventListener('click', () => {dotVisibility++;
             switchButtonClicks++;
             if (switchButtonClicks%2 === 0){
-            dotSpan.textContent = 'Turn off Dots';
+            dotSpan.textContent = 'Turn on Dots';
         }
-        else{dotSpan.textContent = 'Turn on Dots';}
+        else{dotSpan.textContent = 'Turn off Dots';}
             redrawMask(lastOriginalCanvas);});
     const undoButton = document.createElement('button');
     undoButton.id = 'undo';
@@ -1333,19 +1316,20 @@ async function analyzeMRI(img, progressCallback) {
     sliderInput.className = 'numeric-slider'
 
     const valueDisplay = document.createElement('p');
-    valueDisplay.innerHTML = `Value: <strong>${sliderInput.value}</strong>`;
+    valueDisplay.innerHTML = `Opacity: <strong>${sliderInput.value}</strong>`;
 
     sliderInput.addEventListener('input', (event) => {
-    valueDisplay.innerHTML = `Value: <strong>${event.target.value}</strong>`;
+    valueDisplay.innerHTML = `Opacity: <strong>${event.target.value}</strong>`;
     maskOpacity = event.target.value;
     redrawMask(lastOriginalCanvas);
     });
 
     slider.appendChild(sliderInput);
     slider.appendChild(valueDisplay);
-    document.body.appendChild(slider);
+    container.appendChild(slider)
     if (numImageInput < 2 && predictionIndex !== 2){    
-    document.body.appendChild(container);
+    const workload = document.querySelector(".workload");
+    workload.appendChild(container);
 }
 
         // Add canvas
