@@ -29,72 +29,106 @@ const classes = [
 function getFileName(file){
     fileName = file;
 }
+function getMaskValueAtCanvasPixel(px, py) {
+    const scaleX = cropInfo.width / 512;
+    const scaleY = cropInfo.height / 512;
 
+    // Convert original-image pixel → 512×512 mask coordinate
+    const x = Math.floor((px - cropInfo.x) / scaleX);
+    const y = Math.floor((py - cropInfo.y) / scaleY);
+
+    if (
+        x < 0 ||
+        y < 0 ||
+        x >= 512 ||
+        y >= 512
+    ) {
+        return 0;
+    }
+
+    // Apply mask offset
+    const srcX = x - Math.round(maskOffsetX);
+    const srcY = y - Math.round(maskOffsetY);
+
+    if (
+        srcX < 0 ||
+        srcY < 0 ||
+        srcX >= 512 ||
+        srcY >= 512
+    ) {
+        return 0;
+    }
+
+    return editableMask[srcY * 512 + srcX] === 1 ? 1 : 0;
+}
 function exportCanvasAsImage(filename = fileName) {
-    const maskName = fileName.replace(/\./, "_M.");
-    if (!editableMask || !lastOriginalCanvas || !cropInfo) {
+
+    const maskName = filename.replace(
+        /\.[^.]+$/,
+        "_M.png"
+    );
+
+    if (
+        !editableMask ||
+        !lastOriginalCanvas ||
+        !cropInfo
+    ) {
         console.error("Nothing to export.");
         return;
     }
 
+    const width = lastOriginalCanvas.width;
+    const height = lastOriginalCanvas.height;
+
     const canvas = document.createElement("canvas");
-    canvas.width = lastOriginalCanvas.width;
-    canvas.height = lastOriginalCanvas.height;
+
+    canvas.width = width;
+    canvas.height = height;
 
     const ctx = canvas.getContext("2d");
 
-    // Black background
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const imageData =
+        ctx.createImageData(width, height);
 
-    // White mask
-    ctx.fillStyle = "white";
+    const data = imageData.data;
 
-    const scaleX = cropInfo.width / 512;
-    const scaleY = cropInfo.height / 512;
+    for (let y = 0; y < height; y++) {
 
-    for (let y = 0; y < 512; y++) {
+        for (let x = 0; x < width; x++) {
 
-        for (let x = 0; x < 512; x++) {
+            const maskValue =
+                getMaskValueAtCanvasPixel(x, y);
 
-            const srcX = x - maskOffsetX;
-            const srcY = y - maskOffsetY;
+            const i =
+                (y * width + x) * 4;
 
-            if (
-                srcX < 0 ||
-                srcY < 0 ||
-                srcX >= 512 ||
-                srcY >= 512
-            ) {
-                continue;
+            if (maskValue === 1) {
+
+                // WHITE
+                data[i]     = 255;
+                data[i + 1] = 255;
+                data[i + 2] = 255;
+                data[i + 3] = 255;
+
+            } else {
+
+                // BLACK
+                data[i]     = 0;
+                data[i + 1] = 0;
+                data[i + 2] = 0;
+                data[i + 3] = 255;
+
             }
-
-            const index =
-                Math.floor(srcY) * 512 +
-                Math.floor(srcX);
-
-            if (editableMask[index] !== 1) {
-                continue;
-            }
-
-            const drawX =
-                cropInfo.x + x * scaleX;
-
-            const drawY =
-                cropInfo.y + y * scaleY;
-
-            ctx.fillRect(
-                drawX,
-                drawY,
-                scaleX,
-                scaleY
-            );
         }
     }
 
+    ctx.putImageData(imageData, 0, 0);
+
     const link = document.createElement("a");
+
     link.download = maskName;
     link.href = canvas.toDataURL("image/png");
+
     link.click();
 }
 
@@ -149,13 +183,21 @@ function undoEdit() {
 }
 function contourToMask(controlPoints) {
 
-    const canvas = document.createElement("canvas");
+    const canvas =
+        document.createElement("canvas");
+
     canvas.width = 512;
     canvas.height = 512;
 
-    const ctx = canvas.getContext("2d");
+    const ctx =
+        canvas.getContext("2d");
 
-    ctx.clearRect(0, 0, 512, 512);
+    ctx.clearRect(
+        0,
+        0,
+        512,
+        512
+    );
 
     ctx.fillStyle = "white";
 
@@ -166,34 +208,39 @@ function contourToMask(controlPoints) {
         controlPoints[0].y
     );
 
-    for (let i = 1; i < controlPoints.length; i++) {
-
+    for (
+        let i = 1;
+        i < controlPoints.length;
+        i++
+    ) {
         ctx.lineTo(
             controlPoints[i].x,
             controlPoints[i].y
         );
-
     }
 
     ctx.closePath();
-
     ctx.fill();
 
     const img =
-        ctx.getImageData(0,0,512,512).data;
+        ctx.getImageData(
+            0,
+            0,
+            512,
+            512
+        ).data;
 
     const mask =
-        new Uint8Array(512*512);
+        new Uint8Array(512 * 512);
 
-    for(let i=0;i<mask.length;i++){
+    for (let i = 0; i < mask.length; i++) {
 
+        // Only pixels with >=50% coverage become foreground
         mask[i] =
-            img[i*4] > 0 ? 1 : 0;
-
+            img[i * 4] >= 128 ? 1 : 0;
     }
 
     return mask;
-
 }
 function traceContour(mask) {
 
@@ -312,102 +359,116 @@ function redrawMask(originalCanvas) {
         return;
 
     const W = originalCanvas.width;
-const H = originalCanvas.height;
+    const H = originalCanvas.height;
 
-segmentationCtx.clearRect(0,0,W,H);
+    segmentationCtx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
 
-segmentationCtx.drawImage(
-    originalCanvas,
-    0,
-    0
-);
-    // Make everything drawn after this 20% opaque
-    segmentationCtx.globalAlpha = maskOpacity;
-    segmentationCtx.fillStyle = "red";
+    // Draw original MRI
+    segmentationCtx.drawImage(
+        originalCanvas,
+        0,
+        0
+    );
+
+    // Get original pixels
+    const imageData =
+        segmentationCtx.getImageData(
+            0,
+            0,
+            W,
+            H
+        );
+
+    const data = imageData.data;
+
+    const alpha = maskOpacity;
+
+    for (let y = 0; y < H; y++) {
+
+        for (let x = 0; x < W; x++) {
+
+            const maskValue =
+                getMaskValueAtCanvasPixel(x, y);
+
+            if (maskValue !== 1)
+                continue;
+
+            const i =
+                (y * W + x) * 4;
+
+            const originalR = data[i];
+            const originalG = data[i + 1];
+            const originalB = data[i + 2];
+
+            // Red overlay
+            data[i] =
+                Math.round(
+                    originalR * (1 - alpha) +
+                    255 * alpha
+                );
+
+            data[i + 1] =
+                Math.round(
+                    originalG * (1 - alpha)
+                );
+
+            data[i + 2] =
+                Math.round(
+                    originalB * (1 - alpha)
+                );
+
+            data[i + 3] = 255;
+        }
+    }
+
+    // Put the modified pixels back
+    segmentationCtx.putImageData(
+        imageData,
+        0,
+        0
+    );
+
+    // Draw control points afterward
+    segmentationCtx.globalAlpha = 1;
+
+    if (dotVisibility % 2 === 0) {
+        segmentationCtx.fillStyle =
+            "rgba(255,255,255,0)";
+    } else {
+        segmentationCtx.fillStyle =
+            "rgba(255,255,255,1)";
+    }
 
     const scaleX = cropInfo.width / 512;
     const scaleY = cropInfo.height / 512;
 
-for (let y = 0; y < 512; y++) {
-
-    for (let x = 0; x < 512; x++) {
-
-        const srcX = x - maskOffsetX;
-        const srcY = y - maskOffsetY;
-
-        if (
-            srcX < 0 ||
-            srcY < 0 ||
-            srcX >= 512 ||
-            srcY >= 512
-        )
-            continue;
-
-        const index =
-            Math.floor(srcY) * 512 +
-            Math.floor(srcX);
-
-        if (editableMask[index] !== 1)
-            continue;
+    for (const p of controlPoints) {
 
         const drawX =
-            cropInfo.x + x * scaleX;
+            cropInfo.x +
+            (p.x + maskOffsetX) * scaleX;
 
         const drawY =
-            cropInfo.y + y * scaleY;
+            cropInfo.y +
+            (p.y + maskOffsetY) * scaleY;
 
-        segmentationCtx.fillRect(
+        segmentationCtx.beginPath();
+
+        segmentationCtx.arc(
             drawX,
             drawY,
-            scaleX,
-            scaleY
+            1.5,
+            0,
+            Math.PI * 2
         );
 
+        segmentationCtx.fill();
     }
-
-}
-
-    // Restore normal drawing
-    segmentationCtx.fillStyle = "white";
-    segmentationCtx.globalAlpha = 1;
-    if(dotVisibility%2 === 0){
-segmentationCtx.fillStyle = "rgba(255,255,255,0)";
-    }
-    else{
-segmentationCtx.fillStyle = "rgba(255,255,255,1)";
-    }
-for (const p of controlPoints) {
-
-    segmentationCtx.beginPath();
-
-    const drawX =
-    cropInfo.x +
-    (p.x + maskOffsetX) * scaleX;
-
-const drawY =
-    cropInfo.y +
-    (p.y + maskOffsetY) * scaleY;
-
-segmentationCtx.beginPath();
-
-segmentationCtx.arc(
-
-    drawX,
-
-    drawY,
-
-    1.5,
-
-    0,
-
-    Math.PI * 2
-
-);
-
-
-    segmentationCtx.fill();
-
-}
 }
 function getBoundary(mask) {
 
