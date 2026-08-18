@@ -561,7 +561,8 @@ body{
 }
 </style>
 <head>
-<title>Brain Tumor Detection and Annotation</title>
+<title>BTDetection and Analysis</title>
+<link rel="icon" type="image/x-icon" href="C:\Puneethen\MRI-Website\btd1.ico">
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 
@@ -572,6 +573,9 @@ body{
         <header>
             <h1 data-aos="fade-down" data-aos-duration = "1500"
             class="logo">BTDectection</h1>
+            <nav data-aos="fade-down" data-aos-duration = "1500">
+                <a href="https://niivue.github.io/niivue-dcm2niix/">DICOM to NIFTI Converter</a>
+            </nav>
             <nav data-aos="fade-down" data-aos-duration = "1500">
                 <a href="https://www.medifind.com">Find Radiologists</a>
             </nav>
@@ -601,6 +605,7 @@ body{
                 potential brain tumors in T1 MRI scans.
                 Segmentation results assist users
                 in tumor annotations for export.
+                Alternate between 2D MRI and NIFTI analysis.
             </p>
         </div>
     </div>
@@ -611,11 +616,16 @@ body{
             data-aos-duration = "2500"
             class="info-section">
 
-    <p>Please upload an MRI image to analyze.</p>
+    <p>@D MRI: Please upload an MRI image to analyze. This is used for single slice analysis.</p>
         <button id="uploadButton" class="uploadButton">
         <span>Upload MRI Image</span>
         </button>
     <p>
+    <p>
+        NIFTI Viewer: For nifti analysis, click nifti viewer and upload an nii/nii.giz file.
+        If you work with Dicoms, please convert to nifti before uploading. 
+        Near the top of the website, click on "DICOM to NIFTI Converter" to convert.
+    </p>
         Note: The analysis may take a few seconds, so please be patient.
         Model loading automatically starts when you enter the page.
         The image should be in a supported format (e.g., PNG, JPEG).
@@ -627,7 +637,11 @@ body{
         Always consult a healthcare professional for medical advice.
         The classifier detects betwenn glioma, meningioma, pituitary, or no tumor.
     </p>
-
+    <p>
+        Transperancy: This website does not use user uploaded files to train its models.
+        Private patient information is not used by the website, but the website should still
+        be used responsibly and NOT be taken as 100% truth.
+    </p>
     <p>
         The models were trained on the BRISC2025 dataset, which contains roughly
         5,000 training images and 1,000 validation images.
