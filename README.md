@@ -3,11 +3,13 @@
 A Multimodal Website for Brain Tumor Detection, Analysis, and Interpretation via Three Machine Learning Models
 
 > **Disclaimer:** This project is intended for educational, research, and annotation-assistance purposes only. It is not a medical device and should not be used to diagnose, treat, or make clinical decisions about patients.
-> 
+>
 The latest version of the website is here: https://brain-tumor-detection-prototype.vercel.app
 This version of the site includes VLM diagnostics.
+
 The github pages version is here: https://puneeththiru.github.io/Brain_Tumor_Detection_Prototype/
 This version of the site doesn't include VLM diagnostics, but you will still have access to classifier and segmentation results.
+
 ## Overview
 
 This project provides a browser-based interface for analyzing brain MRI scans using multiple AI components.
@@ -33,16 +35,21 @@ Model 3: Vision-Language model for analysis after classifier and segmentation in
 
 ## Model 1
 An efficientnet-b3 classifier
+
 Gives predictions and confidence
 
 ## Model 2
 An efficientnet-b3 segmentation model
+
 Gives localized tumor regions on single slices, but it's also used for slices in nifti viewing
+
 Users can edit the segmentation results and export as a binary mask
 
 ## Model 3
 Qwen Vision Language Model
+
 **Understand that this model provides further explanation and NOT the truth**
+
 Uses classifier and segmentation results to provide further analysis on the prediction tumor including:
 - Tumor location with respect to the MRI image
 - Consistency review between classifier and segmentation model
