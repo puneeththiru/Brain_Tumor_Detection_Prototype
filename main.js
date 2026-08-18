@@ -1,4 +1,4 @@
-
+//single slice
 let classifierSession;
 let segmenterSession;
 let editableMask = null;
@@ -1445,3 +1445,848 @@ modelsReady = loadModels();
 
 window.analyzeMRI = analyzeMRI;
 window.getFileName = getFileName;
+
+import * as nifti from "https://cdn.jsdelivr.net/npm/nifti-reader-js@0.7.1/+esm";
+
+console.log("NIfTI reader loaded:", nifti);
+
+// ===============================
+// NIFTI VIEWER
+// ===============================
+
+const input = document.getElementById("niiInput");
+const canvas = document.getElementById("mriCanvas");
+const ctx = canvas.getContext("2d");
+
+let niftiHeader = null;
+let niftiImage = null;
+
+let currentSlice = 0;
+let numSlices = 1;
+
+// Current anatomical plane
+// "axial"    = XY, moving through Z
+// "coronal"  = XZ, moving through Y
+// "sagittal" = YZ, moving through X
+let currentPlane = "axial";
+
+input.addEventListener("change", async (event) => {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    const arrayBuffer =
+        await file.arrayBuffer();
+
+    loadNifti(arrayBuffer);
+
+});
+
+
+function loadNifti(arrayBuffer) {
+
+    // Handle .nii.gz
+    if (nifti.isCompressed(arrayBuffer)) {
+        arrayBuffer =
+            nifti.decompress(arrayBuffer);
+    }
+
+    if (!nifti.isNIFTI(arrayBuffer)) {
+
+        alert(
+            "This is not a valid NIfTI file."
+        );
+
+        return;
+    }
+
+    niftiHeader =
+        nifti.readHeader(arrayBuffer);
+
+    niftiImage =
+        nifti.readImage(
+            niftiHeader,
+            arrayBuffer
+        );
+
+    console.log(
+        "NIfTI header:",
+        niftiHeader
+    );
+
+    console.log(
+        "Image:",
+        niftiImage
+    );
+
+    console.log(
+        "Dimensions:",
+        {
+            x: niftiHeader.dims[1],
+            y: niftiHeader.dims[2],
+            z: niftiHeader.dims[3]
+        }
+    );
+
+    currentPlane = "axial";
+
+    updateSliceCount();
+
+    currentSlice =
+        Math.floor(numSlices / 2);
+
+    displaySlice(currentSlice);
+}
+
+
+function getTypedArray(
+    header,
+    imageBuffer
+) {
+
+    switch (header.datatypeCode) {
+
+        case nifti.NIFTI1.TYPE_UINT8:
+            return new Uint8Array(imageBuffer);
+
+        case nifti.NIFTI1.TYPE_INT8:
+            return new Int8Array(imageBuffer);
+
+        case nifti.NIFTI1.TYPE_UINT16:
+            return new Uint16Array(imageBuffer);
+
+        case nifti.NIFTI1.TYPE_INT16:
+            return new Int16Array(imageBuffer);
+
+        case nifti.NIFTI1.TYPE_UINT32:
+            return new Uint32Array(imageBuffer);
+
+        case nifti.NIFTI1.TYPE_INT32:
+            return new Int32Array(imageBuffer);
+
+        case nifti.NIFTI1.TYPE_FLOAT32:
+            return new Float32Array(imageBuffer);
+
+        case nifti.NIFTI1.TYPE_FLOAT64:
+            return new Float64Array(imageBuffer);
+
+        default:
+
+            throw new Error(
+                `Unsupported NIfTI datatype: ${header.datatypeCode}`
+            );
+    }
+}
+
+
+// ===============================
+// PLANE MANAGEMENT
+// ===============================
+
+function updateSliceCount() {
+
+    const x =
+        niftiHeader.dims[1];
+
+    const y =
+        niftiHeader.dims[2];
+
+    const z =
+        niftiHeader.dims[3];
+
+    if (currentPlane === "axial") {
+
+        numSlices = z;
+
+    }
+
+    else if (currentPlane === "coronal") {
+
+        numSlices = y;
+
+    }
+
+    else if (currentPlane === "sagittal") {
+
+        numSlices = x;
+
+    }
+
+}
+
+
+function setPlane(plane) {
+
+    if (!niftiHeader)
+        return;
+
+    currentPlane = plane;
+
+    updateSliceCount();
+
+    currentSlice =
+        Math.floor(numSlices / 2);
+
+    displaySlice(currentSlice);
+
+}
+
+
+// ===============================
+// DISPLAY SLICE
+// ===============================
+
+function displaySlice(sliceIndex) {
+
+    if (!niftiHeader || !niftiImage)
+        return;
+
+    const data =
+        getTypedArray(
+            niftiHeader,
+            niftiImage
+        );
+
+    const X =
+        niftiHeader.dims[1];
+
+    const Y =
+        niftiHeader.dims[2];
+
+    const Z =
+        niftiHeader.dims[3];
+
+
+    let width;
+    let height;
+
+
+    // ===========================
+    // AXIAL
+    // XY plane
+    // ===========================
+
+    if (currentPlane === "axial") {
+
+        width = X;
+        height = Y;
+
+    }
+
+
+    // ===========================
+    // CORONAL
+    // XZ plane
+    // ===========================
+
+    else if (currentPlane === "coronal") {
+
+        width = X;
+        height = Z;
+
+    }
+
+
+    // ===========================
+    // SAGITTAL
+    // YZ plane
+    // ===========================
+
+    else {
+
+        width = Y;
+        height = Z;
+
+    }
+
+
+    canvas.width = width;
+    canvas.height = height;
+
+
+    const imageData =
+        ctx.createImageData(
+            width,
+            height
+        );
+
+
+    // ===========================
+    // VOXEL INDEX
+    // ===========================
+
+    function getVoxelIndex(px, py) {
+
+        // -----------------------
+        // AXIAL
+        // -----------------------
+
+        if (currentPlane === "axial") {
+
+            const x = px;
+            const y = py;
+            const z = sliceIndex;
+
+            return (
+                x +
+                y * X +
+                z * X * Y
+            );
+
+        }
+
+
+        // -----------------------
+        // CORONAL
+        // -----------------------
+
+        else if (currentPlane === "coronal") {
+
+            const x = px;
+
+            /*
+             * Flip Z vertically.
+             *
+             * This makes superior appear
+             * toward the top of the image.
+             */
+            const z =
+                Z - 1 - py;
+
+            const y =
+                sliceIndex;
+
+            return (
+                x +
+                y * X +
+                z * X * Y
+            );
+
+        }
+
+
+        // -----------------------
+        // SAGITTAL
+        // -----------------------
+
+        else {
+
+            /*
+             * Horizontal axis = Y
+             * Vertical axis   = Z
+             */
+
+            const y =
+                Y - 1 - px;
+
+            const z =
+                Z - 1 - py;
+
+            const x =
+                sliceIndex;
+
+            return (
+                x +
+                y * X +
+                z * X * Y
+            );
+
+        }
+
+    }
+
+
+    // ===========================
+    // FIND MIN / MAX
+    // ===========================
+
+    let min = Infinity;
+    let max = -Infinity;
+
+
+    for (
+        let py = 0;
+        py < height;
+        py++
+    ) {
+
+        for (
+            let px = 0;
+            px < width;
+            px++
+        ) {
+
+            const voxelIndex =
+                getVoxelIndex(
+                    px,
+                    py
+                );
+
+            const value =
+                data[voxelIndex];
+
+
+            if (
+                Number.isFinite(value)
+            ) {
+
+                if (value < min)
+                    min = value;
+
+                if (value > max)
+                    max = value;
+
+            }
+
+        }
+
+    }
+
+
+    // ===========================
+    // DRAW
+    // ===========================
+
+    for (
+        let py = 0;
+        py < height;
+        py++
+    ) {
+
+        for (
+            let px = 0;
+            px < width;
+            px++
+        ) {
+
+            const voxelIndex =
+                getVoxelIndex(
+                    px,
+                    py
+                );
+
+            const value =
+                data[voxelIndex];
+
+
+            let normalized = 0;
+
+
+            if (
+                max !== min &&
+                Number.isFinite(value)
+            ) {
+
+                normalized =
+                    (value - min) /
+                    (max - min);
+
+            }
+
+
+            const intensity =
+                Math.max(
+                    0,
+                    Math.min(
+                        255,
+                        Math.round(
+                            normalized * 255
+                        )
+                    )
+                );
+
+
+            const pixelIndex =
+                (
+                    py * width +
+                    px
+                ) * 4;
+
+
+            imageData.data[
+                pixelIndex
+            ] =
+                intensity;
+
+            imageData.data[
+                pixelIndex + 1
+            ] =
+                intensity;
+
+            imageData.data[
+                pixelIndex + 2
+            ] =
+                intensity;
+
+            imageData.data[
+                pixelIndex + 3
+            ] =
+                255;
+
+        }
+
+    }
+
+
+    // ===========================
+    // DISPLAY
+    // ===========================
+
+    ctx.putImageData(
+        imageData,
+        0,
+        0
+    );
+
+
+    // ===========================
+    // PRESERVE PHYSICAL ASPECT
+    // ===========================
+
+    const spacingX =
+        Math.abs(
+            niftiHeader.pixDims[1]
+        ) || 1;
+
+    const spacingY =
+        Math.abs(
+            niftiHeader.pixDims[2]
+        ) || 1;
+
+    const spacingZ =
+        Math.abs(
+            niftiHeader.pixDims[3]
+        ) || 1;
+
+
+    let physicalWidth;
+    let physicalHeight;
+
+
+    if (
+        currentPlane === "axial"
+    ) {
+
+        physicalWidth =
+            X * spacingX;
+
+        physicalHeight =
+            Y * spacingY;
+
+    }
+
+    else if (
+        currentPlane === "coronal"
+    ) {
+
+        physicalWidth =
+            X * spacingX;
+
+        physicalHeight =
+            Z * spacingZ;
+
+    }
+
+    else {
+
+        physicalWidth =
+            Y * spacingY;
+
+        physicalHeight =
+            Z * spacingZ;
+
+    }
+
+
+    const maxDisplaySize = 600;
+
+    const aspectRatio =
+        physicalWidth /
+        physicalHeight;
+
+
+    let displayWidth;
+    let displayHeight;
+
+
+    if (aspectRatio >= 1) {
+
+        displayWidth =
+            maxDisplaySize;
+
+        displayHeight =
+            maxDisplaySize /
+            aspectRatio;
+
+    }
+
+    else {
+
+        displayHeight =
+            maxDisplaySize;
+
+        displayWidth =
+            maxDisplaySize *
+            aspectRatio;
+
+    }
+
+
+    canvas.style.width =
+        `${displayWidth}px`;
+
+    canvas.style.height =
+        `${displayHeight}px`;
+
+
+    // ===========================
+    // LABEL
+    // ===========================
+
+    document.getElementById(
+        "sliceLabel"
+    ).textContent =
+        `${currentPlane.toUpperCase()} — Slice ${sliceIndex + 1} / ${numSlices}`;
+
+}
+
+// ===============================
+// SLICE CONTROLS
+// ===============================
+let timerId = null;
+function previousSlice(){
+if (currentSlice > 0) {
+
+                currentSlice--;
+
+                displaySlice(
+                    currentSlice
+                );
+
+            }
+}
+function nextSlice(){
+        if (
+                currentSlice <
+                numSlices - 1
+            ) {
+
+                currentSlice++;
+
+                displaySlice(
+                    currentSlice
+                );
+
+            }
+}
+document
+    .getElementById("prevSlice")
+    .addEventListener(
+        "mousedown",
+        () => {
+            previousSlice();
+            if (timerId !== null) return;
+            timerId = setInterval(previousSlice, 100); // Runs every 100 milliseconds
+
+        }
+    );
+document
+    .getElementById("prevSlice")
+    .addEventListener(
+        "mouseup",
+        () =>{
+            clearInterval(timerId);
+            timerId = null;
+        }
+    )
+
+document
+    .getElementById("nextSlice")
+    .addEventListener(
+        "mousedown",
+        () => {
+            nextSlice();
+            if (timerId !== null) return;
+            timerId = setInterval(nextSlice, 100); // Runs every 100 milliseconds
+
+        }
+    );
+document
+    .getElementById("nextSlice")
+    .addEventListener(
+        "mouseup",
+        () => {
+            clearInterval(timerId);
+            timerId = null;
+        }
+    );
+async function runNiiSegmentation() {
+
+    if (!niftiHeader || !niftiImage) {
+        alert("Please load a NIfTI file first.");
+        return;
+    }
+
+    if (!segmenterSession) {
+        alert("Segmentation model is still loading.");
+        return;
+    }
+
+    console.log(
+        "Running segmentation on NIfTI slice:",
+        currentSlice + 1
+    );
+
+    const button =
+        document.getElementById("runNiiSegmentation");
+
+    const buttonText =
+        button.querySelector(".front");
+
+    button.disabled = true;
+    buttonText.textContent = "Running...";
+
+    try {
+
+        // Make sure the current slice is displayed
+        displaySlice(currentSlice);
+
+        // Convert the displayed NIfTI canvas into an image
+        const image = new Image();
+
+        image.src = canvas.toDataURL("image/png");
+
+        await new Promise((resolve, reject) => {
+
+            image.onload = resolve;
+            image.onerror = reject;
+
+        });
+
+        /*
+         * Run the SAME preprocessing used by the
+         * normal MRI image pipeline.
+         */
+        const input =
+            await imageToTensor(image);
+
+        console.log(
+            "NIfTI tensor:",
+            input.tensor.dims
+        );
+
+        // Run segmentation
+        const result =
+            await runSegmenter(input);
+
+        console.log(
+            "NIfTI segmentation result:",
+            result.mask.dims,
+            result.mask.data.length
+        );
+
+        /*
+         * Store crop information so the existing
+         * mask editing system works.
+         */
+        cropInfo = result.crop;
+
+        /*
+         * Remove previous segmentation canvas
+         */
+        const output =
+            document.getElementById(
+                "niiSegmentationOutput"
+            );
+
+        output.innerHTML = "";
+
+        /*
+         * Display the segmentation using your
+         * existing mask renderer.
+         */
+        const segmentationCanvas =
+            displayMask(
+                result.mask.data,
+                result.originalCanvas,
+                result.crop
+            );
+
+        /*
+         * Put the resulting canvas into the NIfTI
+         * segmentation output area.
+         */
+        output.appendChild(
+            segmentationCanvas
+        );
+
+        /*
+         * Calculate tumor area
+         */
+        const tumorArea =
+            analyzeMask(
+                result.mask.data
+            );
+
+        const info =
+            document.createElement("p");
+
+        info.innerHTML =
+            `Tumor Pixel Area:
+             <b>${tumorArea}%</b>`;
+
+        output.insertBefore(
+            info,
+            segmentationCanvas
+        );
+
+        console.log(
+            "NIfTI segmentation complete."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "NIfTI segmentation failed:",
+            error
+        );
+
+        alert(
+            "Segmentation failed. Check the browser console."
+        );
+
+    } finally {
+
+        button.disabled = false;
+        buttonText.textContent = "Run Segmentation";
+
+    }
+}
+
+document
+    .getElementById("runNiiSegmentation")
+    .addEventListener(
+        "click",
+        runNiiSegmentation
+    );
+document
+    .getElementById("axialButton")
+    .addEventListener(
+        "click",
+        () => setPlane("axial")
+    );
+
+document
+    .getElementById("coronalButton")
+    .addEventListener(
+        "click",
+        () => setPlane("coronal")
+    );
+
+document
+    .getElementById("sagittalButton")
+    .addEventListener(
+        "click",
+        () => setPlane("sagittal")
+    );

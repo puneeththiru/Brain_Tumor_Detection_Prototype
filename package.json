@@ -5,6 +5,7 @@
   "description": "Brain MRI analysis website",
   "dependencies": {
     "groq-sdk": "^1.5.0",
+    "nifti-reader-js": "^0.8.0",
     "onnxruntime-web": "^1.27.0"
   }
 }

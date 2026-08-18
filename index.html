@@ -462,9 +462,6 @@ body{
             <nav data-aos="fade-down" data-aos-duration = "1500">
                 <a href="https://www.medifind.com">Find Radiologists</a>
             </nav>
-            <nav data-aos="fade-down" data-aos-duration = "1500">
-                <a href="https://www.youtube.com/watch?v=oskiEydAaok">Credits for Design</a>
-            </nav>
         </header>
         <div class="content">
             <div data-aos="fade-zoom-in"
@@ -553,10 +550,70 @@ Classification results will be displayed here
 <div id="segmentationOutput">
 Segmentation results will be displayed here
 </div>
+<input type="file" id="niiInput" accept=".nii,.nii.gz">
+
+<div id="niiViewer">
+
+    <div id="niiControls">
+
+        <button id="prevSlice" type="button" class="pushable">
+            <span class="front">Previous Slice</span>
+        </button>
+
+        <span id="sliceLabel">Slice: 0 / 0</span>
+
+        <button id="nextSlice" type="button" class="pushable">
+            <span class="front">Next Slice</span>
+        </button>
+
+        <button id="runNiiSegmentation" type="button" class="pushable">
+            <span class="front">Run Segmentation</span>
+        </button>
+
+    </div>
+
+    <canvas id="mriCanvas"></canvas>
+<div id="planeControls">
+
+    <button
+        id="axialButton"
+        type="button"
+        class="pushable"
+    >
+        <span class="front">
+            Axial
+        </span>
+    </button>
+
+    <button
+        id="coronalButton"
+        type="button"
+        class="pushable"
+    >
+        <span class="front">
+            Coronal
+        </span>
+    </button>
+
+    <button
+        id="sagittalButton"
+        type="button"
+        class="pushable"
+    >
+        <span class="front">
+            Sagittal
+        </span>
+    </button>
+
+</div>
+    <div id="niiSegmentationOutput"></div>
+
+</div>
 <div class="canvasButtonClass" id="canvasButtons"></div>
 <div class="forced-below"id="vlmOutput"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+
 <script type="module" src="./main.js"></script>
 <script> 
 uploadButton.addEventListener(
