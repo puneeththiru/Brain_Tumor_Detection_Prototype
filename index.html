@@ -446,6 +446,119 @@ body{
     line-height: 1.8;
     white-space: pre-line;
 }
+/* ===============================
+   VIEWER TABS
+   =============================== */
+
+.viewer-tabs {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 2rem auto 1.5rem auto;
+}
+
+.viewer-tab {
+    position: relative;
+    border: none;
+    border-radius: 12px;
+    padding: 0;
+    cursor: pointer;
+    background: hsl(279, 100%, 32%);
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+    transition: 0.3s ease;
+}
+
+.viewer-tab .tab-front {
+    display: block;
+    padding: 12px 35px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: hsl(281, 100%, 47%);
+    color: white;
+    transform: translateY(-4px);
+    transition: 0.2s ease;
+}
+
+.viewer-tab:hover {
+    box-shadow: 0 0 20px rgba(255,255,255,0.5);
+}
+
+.viewer-tab:active .tab-front {
+    transform: translateY(-1px);
+}
+
+.viewer-tab.active .tab-front {
+    background: #429da7;
+}
+
+
+/* ===============================
+   VIEWER PANELS
+   =============================== */
+
+.viewer-panel {
+    width: 100%;
+    display: none;
+}
+
+.viewer-panel.active {
+    display: block;
+}
+
+
+/* ===============================
+   NIFTI VIEWER
+   =============================== */
+
+#niiViewer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#niiInput {
+    margin: 1rem auto 1.5rem auto;
+    color: white;
+}
+
+#niiControls,
+#planeControls {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 1rem auto;
+}
+
+#sliceLabel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 180px;
+}
+
+#mriCanvas {
+    display: block;
+    max-width: 90vw;
+    max-height: 70vh;
+    width: auto;
+    height: auto;
+    margin: 1.5rem auto;
+    image-rendering: auto;
+}
+
+#niiSegmentationOutput {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 2rem;
+}
 </style>
 <head>
 <title>Brain Tumor Detection and Annotation</title>
@@ -539,78 +652,172 @@ body{
 <progress id="myProgressBar" class="progressBar" value="0" max="100"></progress>
 <div id="statusText" class="statusText">0%</div>
 <div class="workload">
-<div id="inferenceStatus">Inference Not Started</div>
-<div id="imageDisplay">
-Image will be displayed here
-</div>
-<div id="classificationOutput">
-Classification results will be displayed here
-</div>
 
-<div id="segmentationOutput">
-Segmentation results will be displayed here
-</div>
-<input type="file" id="niiInput" accept=".nii,.nii.gz">
+    <!--tabs -->
 
-<div id="niiViewer">
+    <div class="viewer-tabs">
 
-    <div id="niiControls">
-
-        <button id="prevSlice" type="button" class="pushable">
-            <span class="front">Previous Slice</span>
+        <button
+            id="tab2D"
+            class="viewer-tab active"
+            type="button"
+        >
+            <span class="tab-front">
+                2D MRI
+            </span>
         </button>
 
-        <span id="sliceLabel">Slice: 0 / 0</span>
-
-        <button id="nextSlice" type="button" class="pushable">
-            <span class="front">Next Slice</span>
-        </button>
-
-        <button id="runNiiSegmentation" type="button" class="pushable">
-            <span class="front">Run Segmentation</span>
+        <button
+            id="tabNifti"
+            class="viewer-tab"
+            type="button"
+        >
+            <span class="tab-front">
+                NIfTI Viewer
+            </span>
         </button>
 
     </div>
-
-    <canvas id="mriCanvas"></canvas>
-<div id="planeControls">
-
-    <button
-        id="axialButton"
-        type="button"
-        class="pushable"
+    <!-- 2d -->
+    <div
+        id="twoDViewer"
+        class="viewer-panel active"
     >
-        <span class="front">
-            Axial
-        </span>
-    </button>
 
-    <button
-        id="coronalButton"
-        type="button"
-        class="pushable"
-    >
-        <span class="front">
-            Coronal
-        </span>
-    </button>
+        <div id="inferenceStatus">
+            Inference Not Started
+        </div>
 
-    <button
-        id="sagittalButton"
-        type="button"
-        class="pushable"
+        <div id="imageDisplay">
+            Image will be displayed here
+        </div>
+
+        <div id="classificationOutput">
+            Classification results will be displayed here
+        </div>
+
+        <div id="segmentationOutput">
+            Segmentation results will be displayed here
+        </div>
+
+        <div
+            id="canvasButtons"
+            class="canvasButtonClass"
+        ></div>
+
+        <div
+            id="vlmOutput"
+            class="forced-below"
+        ></div>
+
+    </div>
+    <!--nifti-->
+    <div
+        id="niftiViewer"
+        class="viewer-panel"
     >
-        <span class="front">
-            Sagittal
-        </span>
-    </button>
+        <h2>NIfTI Viewer</h2>
+        <p>
+            Upload a NIfTI MRI volume.
+        </p>
+        <input
+            type="file"
+            id="niiInput"
+            accept=".nii,.nii.gz"
+        >
+        <div id="niiViewer">
+
+            <div id="niiControls">
+
+                <button
+                    id="prevSlice"
+                    type="button"
+                    class="pushable"
+                >
+                    <span class="front">
+                        Previous Slice
+                    </span>
+                </button>
+
+
+                <span id="sliceLabel">
+                    Slice: 0 / 0
+                </span>
+
+
+                <button
+                    id="nextSlice"
+                    type="button"
+                    class="pushable"
+                >
+                    <span class="front">
+                        Next Slice
+                    </span>
+                </button>
+
+            </div>
+
+
+            <div id="planeControls">
+
+                <button
+                    id="axialButton"
+                    type="button"
+                    class="pushable"
+                >
+                    <span class="front">
+                        Axial
+                    </span>
+                </button>
+
+
+                <button
+                    id="coronalButton"
+                    type="button"
+                    class="pushable"
+                >
+                    <span class="front">
+                        Coronal
+                    </span>
+                </button>
+
+
+                <button
+                    id="sagittalButton"
+                    type="button"
+                    class="pushable"
+                >
+                    <span class="front">
+                        Sagittal
+                    </span>
+                </button>
+
+            </div>
+
+
+            <canvas
+                id="mriCanvas"
+            ></canvas>
+
+
+            <button
+                id="runNiiSegmentation"
+                type="button"
+                class="pushable"
+            >
+                <span class="front">
+                    Run Segmentation
+                </span>
+            </button>
+            <div
+                id="niiSegmentationOutput"
+            ></div>
+
+        </div>
+
+    </div>
 
 </div>
-    <div id="niiSegmentationOutput"></div>
-
-</div>
-<div class="canvasButtonClass" id="canvasButtons"></div>
-<div class="forced-below"id="vlmOutput"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 

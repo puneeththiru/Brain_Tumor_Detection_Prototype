@@ -1389,9 +1389,22 @@ async function analyzeMRI(img, progressCallback) {
     slider.appendChild(valueDisplay);
     container.appendChild(slider)
     if (numImageInput < 2 && predictionIndex !== 2){    
-    const workload = document.querySelector(".workload");
-    workload.appendChild(container);
-}
+    const twoDViewer = document.getElementById("twoDViewer");
+    twoDViewer.appendChild(container);
+}   
+    const vlmOutput =
+                document.getElementById(
+                    "vlmOutput"
+                );
+            if (
+                vlmOutput &&
+                container
+            ) {
+                container.insertAdjacentElement(
+                    "afterend",
+                    vlmOutput
+                );
+            }
 
         // Add canvas
         const segmentationCanvas =
@@ -1445,14 +1458,72 @@ modelsReady = loadModels();
 
 window.analyzeMRI = analyzeMRI;
 window.getFileName = getFileName;
+// viewer tabs
 
+const tab2D =
+    document.getElementById("tab2D");
+
+const tabNifti =
+    document.getElementById("tabNifti");
+
+const twoDViewer =
+    document.getElementById("twoDViewer");
+
+const niftiViewer =
+    document.getElementById("niftiViewer");
+
+
+tab2D.addEventListener(
+    "click",
+    () => {
+
+        twoDViewer.classList.add(
+            "active"
+        );
+
+        niftiViewer.classList.remove(
+            "active"
+        );
+
+        tab2D.classList.add(
+            "active"
+        );
+
+        tabNifti.classList.remove(
+            "active"
+        );
+
+    }
+);
+
+
+tabNifti.addEventListener(
+    "click",
+    () => {
+
+        twoDViewer.classList.remove(
+            "active"
+        );
+
+        niftiViewer.classList.add(
+            "active"
+        );
+
+        tab2D.classList.remove(
+            "active"
+        );
+
+        tabNifti.classList.add(
+            "active"
+        );
+
+    }
+);
 import * as nifti from "https://cdn.jsdelivr.net/npm/nifti-reader-js@0.7.1/+esm";
 
 console.log("NIfTI reader loaded:", nifti);
 
-// ===============================
 // NIFTI VIEWER
-// ===============================
 
 const input = document.getElementById("niiInput");
 const canvas = document.getElementById("mriCanvas");
@@ -1579,11 +1650,6 @@ function getTypedArray(
     }
 }
 
-
-// ===============================
-// PLANE MANAGEMENT
-// ===============================
-
 function updateSliceCount() {
 
     const x =
@@ -1632,11 +1698,6 @@ function setPlane(plane) {
 
 }
 
-
-// ===============================
-// DISPLAY SLICE
-// ===============================
-
 function displaySlice(sliceIndex) {
 
     if (!niftiHeader || !niftiImage)
@@ -1662,10 +1723,8 @@ function displaySlice(sliceIndex) {
     let height;
 
 
-    // ===========================
     // AXIAL
     // XY plane
-    // ===========================
 
     if (currentPlane === "axial") {
 
@@ -1673,12 +1732,8 @@ function displaySlice(sliceIndex) {
         height = Y;
 
     }
-
-
-    // ===========================
     // CORONAL
     // XZ plane
-    // ===========================
 
     else if (currentPlane === "coronal") {
 
@@ -1687,11 +1742,8 @@ function displaySlice(sliceIndex) {
 
     }
 
-
-    // ===========================
     // SAGITTAL
     // YZ plane
-    // ===========================
 
     else {
 
@@ -1711,16 +1763,9 @@ function displaySlice(sliceIndex) {
             height
         );
 
-
-    // ===========================
-    // VOXEL INDEX
-    // ===========================
-
     function getVoxelIndex(px, py) {
 
-        // -----------------------
         // AXIAL
-        // -----------------------
 
         if (currentPlane === "axial") {
 
@@ -1737,9 +1782,7 @@ function displaySlice(sliceIndex) {
         }
 
 
-        // -----------------------
         // CORONAL
-        // -----------------------
 
         else if (currentPlane === "coronal") {
 
@@ -1766,9 +1809,7 @@ function displaySlice(sliceIndex) {
         }
 
 
-        // -----------------------
         // SAGITTAL
-        // -----------------------
 
         else {
 
@@ -1795,11 +1836,6 @@ function displaySlice(sliceIndex) {
         }
 
     }
-
-
-    // ===========================
-    // FIND MIN / MAX
-    // ===========================
 
     let min = Infinity;
     let max = -Infinity;
@@ -1842,11 +1878,6 @@ function displaySlice(sliceIndex) {
         }
 
     }
-
-
-    // ===========================
-    // DRAW
-    // ===========================
 
     for (
         let py = 0;
@@ -1928,21 +1959,11 @@ function displaySlice(sliceIndex) {
 
     }
 
-
-    // ===========================
-    // DISPLAY
-    // ===========================
-
     ctx.putImageData(
         imageData,
         0,
         0
     );
-
-
-    // ===========================
-    // PRESERVE PHYSICAL ASPECT
-    // ===========================
 
     const spacingX =
         Math.abs(
@@ -2039,11 +2060,6 @@ function displaySlice(sliceIndex) {
     canvas.style.height =
         `${displayHeight}px`;
 
-
-    // ===========================
-    // LABEL
-    // ===========================
-
     document.getElementById(
         "sliceLabel"
     ).textContent =
@@ -2051,9 +2067,6 @@ function displaySlice(sliceIndex) {
 
 }
 
-// ===============================
-// SLICE CONTROLS
-// ===============================
 let timerId = null;
 function previousSlice(){
 if (currentSlice > 0) {
@@ -2148,7 +2161,6 @@ async function runNiiSegmentation() {
     buttonText.textContent = "Running...";
 
     try {
-
         // Make sure the current slice is displayed
         displaySlice(currentSlice);
 
@@ -2165,8 +2177,7 @@ async function runNiiSegmentation() {
         });
 
         /*
-         * Run the SAME preprocessing used by the
-         * normal MRI image pipeline.
+         * Run the SAME preprocessing
          */
         const input =
             await imageToTensor(image);
@@ -2187,8 +2198,7 @@ async function runNiiSegmentation() {
         );
 
         /*
-         * Store crop information so the existing
-         * mask editing system works.
+         * Store crop information 
          */
         cropInfo = result.crop;
 
@@ -2202,10 +2212,7 @@ async function runNiiSegmentation() {
 
         output.innerHTML = "";
 
-        /*
-         * Display the segmentation using your
-         * existing mask renderer.
-         */
+        //display
         const segmentationCanvas =
             displayMask(
                 result.mask.data,
@@ -2213,17 +2220,11 @@ async function runNiiSegmentation() {
                 result.crop
             );
 
-        /*
-         * Put the resulting canvas into the NIfTI
-         * segmentation output area.
-         */
         output.appendChild(
             segmentationCanvas
         );
 
-        /*
-         * Calculate tumor area
-         */
+        //tumor area
         const tumorArea =
             analyzeMask(
                 result.mask.data
