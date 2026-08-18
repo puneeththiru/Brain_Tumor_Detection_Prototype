@@ -3,10 +3,11 @@
 A Multimodal Website for Brain Tumor Detection, Analysis, and Interpretation via Three Machine Learning Models
 
 > **Disclaimer:** This project is intended for educational, research, and annotation-assistance purposes only. It is not a medical device and should not be used to diagnose, treat, or make clinical decisions about patients.
-The lastest version of the website is here: ([https://brain-tumor-detection-prototype-giq5t1za4-puneethen.vercel.app/](https://brain-tumor-detection-prototype.vercel.app/))
-This version of the site includes vlm diagnostics.
+> 
+The latest version of the website is here: https://brain-tumor-detection-prototype.vercel.app
+This version of the site includes VLM diagnostics.
 The github pages version is here: https://puneeththiru.github.io/Brain_Tumor_Detection_Prototype/
-This version of the site doesn't include vlm diagnostics, but you will still have access to classifier and segmentation results.
+This version of the site doesn't include VLM diagnostics, but you will still have access to classifier and segmentation results.
 ## Overview
 
 This project provides a browser-based interface for analyzing brain MRI scans using multiple AI components.
@@ -18,11 +19,11 @@ The application currently supports:
 - Interactive segmentation-mask editing
 - Tumor pixel-area estimation
 - AI-generated explanations using a vision-language model (VLM)
-- NIfTI (`.nii` / `.nii.gz`) volume visualization
+- NIFTI (`.nii` / `.nii.gz`) volume visualization
 - Axial, coronal, and sagittal views
-- NIfTI slice navigation
+- NIFTI slice navigation
 - Browser-based MRI visualization
-- Planned DICOM → NIfTI conversion
+- Planned DICOM → NIFTI conversion
 
 The goal is to combine traditional computer vision models with a vision-language model to create a more informative MRI analysis workflow.
 
@@ -41,6 +42,7 @@ Users can edit the segmentation results and export as a binary mask
 
 ## Model 3
 Qwen Vision Language Model
+**Understand that this model provides further explanation and NOT the truth**
 Uses classifier and segmentation results to provide further analysis on the prediction tumor including:
 - Tumor location with respect to the MRI image
 - Consistency review between classifier and segmentation model
