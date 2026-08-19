@@ -9,6 +9,9 @@ This version of the site includes VLM diagnostics.
 
 The github pages version is here: https://puneeththiru.github.io/Brain_Tumor_Detection_Prototype/
 This version of the site doesn't include VLM diagnostics, but you will still have access to classifier and segmentation results.
+## Demonstration
+
+https://www.youtube.com/watch?v=WOtwsYzAgY8
 
 ## Overview
 
