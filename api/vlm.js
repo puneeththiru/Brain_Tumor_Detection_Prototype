@@ -62,7 +62,6 @@ DO NOT:
 - Write an internal analysis before the answer.
 - Claim that the patient has a tumor or has a specific disease.
 - Present the AI output as a medical diagnosis.
-- Use the character * in the response
 
 The response should be concise, objective, and easy to understand.
 
