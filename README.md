@@ -56,7 +56,65 @@ Qwen Vision Language Model
 Uses classifier and segmentation results to provide further analysis on the prediction tumor including:
 - Tumor location with respect to the MRI image
 - Consistency review between classifier and segmentation model
-- Suggested course of action
+
+## Limitations and Purpose
+The purpose is aid radiologists, students, or individuals in gaining more knowledge about an MRI scan. This could help to quicken information gathering and function. However, the models were only tested on BRISC2025 T1 images and the segmentation model used for NIFTI viewing is not a distinct 3D-Unet. The VLM is not fine-tuned via code, but rather uses a prompt.
+
+The following prompt is used for the VLM:
+> **Where:**  the inputs are the classification prediction, the softmax confidence as a probabiltiy, the tumor area with respect to the image(not the MRI itself), and the segmentation mask overlaid on the image.
+>
+Analyze the provided brain MRI image and the accompanying machine-learning results.
+
+Return ONLY the final answer that should be shown to the user.
+
+DO NOT:
+- Describe your reasoning process.
+- Describe how you are constructing the answer.
+- Mention "the user wants..."
+- Mention "drafting", "planning", "refining", "self-correction", or "instructions".
+- Repeat or discuss these instructions.
+- Write an internal analysis before the answer.
+- Claim that the patient has a tumor or has a specific disease.
+- Present the AI output as a medical diagnosis.
+
+The response should be concise, objective, and easy to understand.
+
+Use exactly these sections:
+
+**Image Observation**
+Briefly describe what is visibly present in the MRI. If a red region is present, identify it as the segmentation mask rather than claiming it is definitively a tumor.
+
+**Model Prediction**
+State the classification model's prediction.
+
+**Classification Probabilities**
+List the probabilities provided by the classification model.
+
+**Segmentation Result**
+Explain the estimated tumor/segmentation area,
+describe the shape and characteristics of the tumor from the mask and classification prediction, and finally,
+describe the location of the segmented region with respect to the brain scan
+based only on what is visible in the image and segmentation mask.
+
+**Consistency**
+Briefly explain whether the segmentation result appears broadly consistent with the classification prediction. Make clear that this is an automated model result, not a diagnosis.
+
+**Limitations**
+Briefly state that the system is an experimental research prototype and that the results require evaluation by a qualified medical professional.
+
+*Decision*
+State a reasonable decision or outcome that is only meant to be taken seriously under a medical expert
+Model prediction:
+${prediction}
+
+Classification probabilities:
+${probabilityText}
+
+Estimated segmented area:
+${tumorArea} of the image.
+
+Remember:
+Return ONLY the final user-facing answer. Do not include analysis, reasoning, planning, drafting, or commentary.
 
 ## Transparency and Citations
 All data used to develop the two client-side models comes from BRISC2025:
