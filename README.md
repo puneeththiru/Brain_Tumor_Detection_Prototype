@@ -8,7 +8,7 @@ The latest version of the website is here: https://brain-tumor-detection-prototy
 This version of the site includes VLM diagnostics.
 
 The github pages version is here: https://puneeththiru.github.io/Brain_Tumor_Detection_Prototype/
-This version of the site doesn't include VLM diagnostics, but you will still have access to classifier and segmentation results.
+This version of the site doesn't include VLM diagnostics, but you will still have access to classifier and segmentation results. VLM inference requires a backend not available via static github pages hosting.
 ## Demonstration
 
 https://www.youtube.com/watch?v=WOtwsYzAgY8
@@ -57,6 +57,20 @@ Uses classifier and segmentation results to provide further analysis on the pred
 - Tumor location with respect to the MRI image
 - Consistency review between classifier and segmentation model
 - Suggested course of action
+
+## Transparency and Citations
+All data used to develop the two client-side models comes from BRISC2025:
+Fateh, A., Rezvani, Y., Moayedi, S. et al. BRISC: Annotated Dataset for Brain Tumor Segmentation and Classification. Sci Data 13, 361 (2026). https://doi.org/10.1038/s41597-026-06753-y
+
+The segmentation model's metrics on the 20th epoch:
+Train Loss : 0.0696
+Train Dice : 0.9422
+Val Loss   : 0.1618
+Val Dice   : 0.8707
+IoU        : 0.8031
+Precision  : 0.8935
+Recall     : 0.8931
+The classification model is going under further evaluation due to potential dataset leakage from the dataset's main aggregated sources.
 
 ## NIFTI Viewing
 Clicking the tab for NIFTI Viewing allows the user to view the nifti file in all three anatomical planes. The user can run segmentation inference on a single image at a time. This was trained on glioma, meningioma, and pituitary tumors.
