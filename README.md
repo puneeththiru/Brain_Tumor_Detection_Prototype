@@ -117,17 +117,31 @@ Remember:
 Return ONLY the final user-facing answer. Do not include analysis, reasoning, planning, drafting, or commentary.
 
 ## Transparency and Citations
+
 All data used to develop the two client-side models comes from BRISC2025:
+
 Fateh, A., Rezvani, Y., Moayedi, S. et al. BRISC: Annotated Dataset for Brain Tumor Segmentation and Classification. Sci Data 13, 361 (2026). https://doi.org/10.1038/s41597-026-06753-y
 
+Website design was insipred by: https://github.com/MiladiCode/3D-startup-app
+
+The DICOM to NIFTI Converter is from: https://niivue.github.io/niivue-dcm2niix/
+
 The segmentation model's metrics on the 20th epoch:
+
 Train Loss : 0.0696
+
 Train Dice : 0.9422
+
 Val Loss   : 0.1618
+
 Val Dice   : 0.8707
+
 IoU        : 0.8031
+
 Precision  : 0.8935
+
 Recall     : 0.8931
+
 The classification model is going under further evaluation due to potential dataset leakage from the dataset's main aggregated sources.
 
 ## NIFTI Viewing
