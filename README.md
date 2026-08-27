@@ -147,4 +147,5 @@ The classification model is going under further evaluation due to potential data
 ## NIFTI Viewing
 Clicking the tab for NIFTI Viewing allows the user to view the nifti file in all three anatomical planes. The user can run segmentation inference on a single image at a time. This was trained on glioma, meningioma, and pituitary tumors.
 
-
+## Special Thanks
+I'd to thank Yasin Rezvani for play testing and giving feedback for the website.
