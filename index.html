@@ -604,7 +604,7 @@ body{
     content="BTDetection is a multimodal brain MRI analysis and tumor annotation platform for research and educational use."
 >
 <meta name="google-site-verification" content="QmthwUSygZQMvEtVSkRCTXTRfdnFFkB05eizgs3-5MI" />
-<link rel="icon" type="image/x-icon" href="C:\Puneethen\MRI-Website\btd1.ico">
+<link rel="icon" type="image/x-icon" href="./btd1.ico">
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 <!-- Google tag (gtag.js) -->
@@ -621,37 +621,25 @@ body{
     <div class= "layer-blur">  </div>
     <div class="container">
         <header>
-            <h1 data-aos="fade-down" data-aos-duration = "1500"
+            <h1
             class="logo">BTDetection</h1>
-            <nav data-aos="fade-down" data-aos-duration = "1500">
+            <nav>
                 <a href="https://niivue.github.io/niivue-dcm2niix/">DICOM to NIFTI Converter</a>
             </nav>
-            <nav data-aos="fade-down" data-aos-duration = "1500">
+            <nav>
                 <a href="https://github.com/puneeththiru/Brain_Tumor_Detection_Prototype">Github Repo</a>
             </nav>
-            <nav data-aos="fade-down" data-aos-duration = "1500">
+            <nav>
                 <a href="https://www.medifind.com">Find Radiologists</a>
             </nav>
         </header>
         <div class="content">
-            <div data-aos="fade-zoom-in"
-            data-aos-easing="ease-in-back"
-            data-aos-delay="300"
-            data-aos-offset="0"
-            data-aos-duration = "1500"
+            <div 
             class="tag-box">
                 <div class="tag">Welcome to</div>
             </div>
-            <h1 data-aos="fade-zoom-in"
-            data-aos-easing="ease-in-back"
-            data-aos-delay="300"
-            data-aos-offset="0"
-            data-aos-duration = "2000">BTDetection</h1>
-            <p data-aos="fade-zoom-in"
-            data-aos-easing="ease-in-back"
-            data-aos-delay="300"
-            data-aos-offset="0"
-            data-aos-duration = "2500"
+            <h1>BTDetection</h1>
+            <p
             class="description">
                 This is a no-cost website that allows users to
                 detect and classify
@@ -662,12 +650,7 @@ body{
             </p>
         </div>
     </div>
-    <div data-aos="fade-zoom-in"
-            data-aos-easing="ease-in-back"
-            data-aos-delay="300"
-            data-aos-offset="0"
-            data-aos-duration = "2500"
-            class="info-section">
+    <div class="info-section">
 
     <p>2D MRI: Please upload an MRI image to analyze. This is used for single slice analysis.</p>
         <div
@@ -965,9 +948,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("niiDropZone");
 
 
-    /* =====================================================
-       2D MRI UPLOAD
-       ===================================================== */
+    // 2d upload
 
     uploadButton.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -989,9 +970,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    /* =====================================================
-       2D MRI DRAG & DROP
-       ===================================================== */
+    //2d drag drop
 
     ["dragenter", "dragover"].forEach(eventName => {
 
@@ -1043,11 +1022,6 @@ document.addEventListener("DOMContentLoaded", () => {
         processMRIFile(file);
 
     });
-
-
-    /* =====================================================
-       PROCESS 2D MRI
-       ===================================================== */
 
     async function processMRIFile(file) {
 
@@ -1121,9 +1095,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
 
-                /* ===============================
-                   SEND RESULTS TO VLM
-                   =============================== */
+                // vlm
 
                 const response =
                     await fetch(
@@ -1206,9 +1178,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
-       NIFTI UPLOAD
-       ===================================================== */
+    //nii upload
 
     niiUploadButton.addEventListener(
         "click",
@@ -1232,9 +1202,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    /* =====================================================
-       NIFTI NORMAL FILE SELECTION
-       ===================================================== */
+    //nii file select
 
     niiInput.addEventListener(
         "change",
@@ -1253,9 +1221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    /* =====================================================
-       NIFTI DRAG & DROP
-       ===================================================== */
+    //drag drop nii
 
     ["dragenter", "dragover"].forEach(
         eventName => {
@@ -1334,11 +1300,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
     );
-
-
-    /* =====================================================
-       PROCESS NIFTI
-       ===================================================== */
 
     function processNiftiFile(file) {
 

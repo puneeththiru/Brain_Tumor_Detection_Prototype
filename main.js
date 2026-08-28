@@ -1618,16 +1618,9 @@ import * as nifti from "https://cdn.jsdelivr.net/npm/nifti-reader-js@0.7.1/+esm"
 
 console.log("NIfTI reader loaded:", nifti);
 
-// ============================================================
-// NIFTI VIEWER
-// COMPLETELY SEPARATE FROM THE NORMAL 2D VIEWER
-// ============================================================
 
 const niiInput = document.getElementById("niiInput");
 
-// IMPORTANT:
-// This canvas belongs ONLY to the NIfTI viewer.
-// It is NOT the same canvas used by the 2D image viewer.
 const niiCanvas = document.getElementById("mriCanvas");
 const niiCtx = niiCanvas.getContext("2d");
 
@@ -1638,9 +1631,7 @@ let niiCurrentSlice = 0;
 let niiNumSlices = 1;
 let niiCurrentPlane = "axial";
 
-// ------------------------------------------------------------
 // NIFTI-ONLY SEGMENTATION STATE
-// ------------------------------------------------------------
 
 let niiSegmentationCanvas = null;
 let niiSegmentationCtx = null;
@@ -1654,9 +1645,7 @@ let niiMaskOffsetY = 0;
 
 let niiMaskOpacity = 0.2;
 
-// ------------------------------------------------------------
 // LOAD NIFTI
-// ------------------------------------------------------------
 
 niiInput.addEventListener("change", async (event) => {
 
@@ -1684,9 +1673,7 @@ niiInput.addEventListener("change", async (event) => {
 });
 
 
-// ------------------------------------------------------------
 // LOAD NIFTI DATA
-// ------------------------------------------------------------
 
 function loadNifti(arrayBuffer) {
 
@@ -1748,9 +1735,7 @@ function loadNifti(arrayBuffer) {
 }
 
 
-// ------------------------------------------------------------
 // NIFTI DATATYPE
-// ------------------------------------------------------------
 
 function getNiiTypedArray(
     header,
@@ -1792,9 +1777,7 @@ function getNiiTypedArray(
 }
 
 
-// ------------------------------------------------------------
 // UPDATE SLICE COUNT
-// ------------------------------------------------------------
 
 function updateNiiSliceCount() {
 
@@ -1830,9 +1813,7 @@ function updateNiiSliceCount() {
 }
 
 
-// ------------------------------------------------------------
 // CHANGE PLANE
-// ------------------------------------------------------------
 
 function setNiiPlane(plane) {
 
@@ -1854,14 +1835,8 @@ function setNiiPlane(plane) {
 }
 
 
-// ------------------------------------------------------------
 // DISPLAY NIFTI SLICE
-// ------------------------------------------------------------
 
-// ============================================================
-// DISPLAY NIFTI SLICE
-// PRESERVES VOXEL SPACING + FITS ENTIRE SLICE
-// ============================================================
 
 function displayNiiSlice(sliceIndex) {
 
@@ -1878,9 +1853,7 @@ function displayNiiSlice(sliceIndex) {
     const Y = niftiHeader.dims[2];
     const Z = niftiHeader.dims[3];
 
-    // --------------------------------------------------------
     // NIFTI VOXEL SPACING
-    // --------------------------------------------------------
 
     const spacingX =
         Math.abs(niftiHeader.pixDims[1]) || 1;
@@ -1892,12 +1865,6 @@ function displayNiiSlice(sliceIndex) {
         Math.abs(niftiHeader.pixDims[3]) || 1;
 
 
-    // --------------------------------------------------------
-    // DETERMINE SLICE DIMENSIONS
-    //
-    // width/height = number of voxels
-    // physicalWidth/Height = millimeters
-    // --------------------------------------------------------
 
     let width;
     let height;
@@ -1975,11 +1942,6 @@ function displayNiiSlice(sliceIndex) {
         }
     );
 
-
-    // ========================================================
-    // CREATE RAW SLICE
-    // ========================================================
-
     const rawCanvas =
         document.createElement("canvas");
 
@@ -1995,12 +1957,6 @@ function displayNiiSlice(sliceIndex) {
             width,
             height
         );
-
-
-    // ========================================================
-    // VOXEL INDEX
-    // ========================================================
-
     function getVoxelIndex(px, py) {
 
         if (
@@ -2043,13 +1999,11 @@ function displayNiiSlice(sliceIndex) {
 
 
         else {
-
-            // ------------------------------------------------
-            // SAGITTAL
+            // SAGITTAL = X
             //
             // Horizontal = Y
             // Vertical   = Z
-            // ------------------------------------------------
+            
 
             const y =
                 Y - 1 - px;
@@ -2067,11 +2021,6 @@ function displayNiiSlice(sliceIndex) {
             );
         }
     }
-
-
-    // ========================================================
-    // FIND INTENSITY RANGE
-    // ========================================================
 
     const values = [];
 
@@ -2149,11 +2098,6 @@ function displayNiiSlice(sliceIndex) {
                 ];
         }
     }
-
-
-    // ========================================================
-    // RENDER RAW SLICE
-    // ========================================================
 
     for (
         let py = 0;
@@ -2240,26 +2184,12 @@ function displayNiiSlice(sliceIndex) {
         0
     );
 
-
-    // ========================================================
-    // FIT TO VIEWER WHILE PRESERVING PHYSICAL ASPECT RATIO
-    // ========================================================
-
     const maxDisplayWidth = 900;
     const maxDisplayHeight = 650;
-
-
-    // --------------------------------------------------------
-    // THIS IS THE IMPORTANT PART.
-    //
-    // The aspect ratio is based on MILLIMETERS,
-    // not simply voxel counts.
-    // --------------------------------------------------------
 
     const physicalAspectRatio =
         physicalWidth /
         physicalHeight;
-
 
     // Start by fitting width.
 
@@ -2307,9 +2237,6 @@ function displayNiiSlice(sliceIndex) {
         );
 
 
-    // ========================================================
-    // CREATE DISPLAY CANVAS
-    // ========================================================
 
     const displayCanvas =
         document.createElement(
@@ -2339,14 +2266,7 @@ function displayNiiSlice(sliceIndex) {
         "high";
 
 
-    // --------------------------------------------------------
-    // DRAW ENTIRE SLICE
-    //
-    // The source is the ENTIRE raw slice.
-    //
-    // Because displayWidth/displayHeight were calculated
-    // from physical dimensions, the image is not distorted.
-    // --------------------------------------------------------
+
 
     displayCtx.drawImage(
         rawCanvas,
@@ -2363,9 +2283,6 @@ function displayNiiSlice(sliceIndex) {
     );
 
 
-    // ========================================================
-    // DRAW TO NIFTI CANVAS ONLY
-    // ========================================================
 
     niiCanvas.width =
         displayWidth;
@@ -2397,12 +2314,6 @@ function displayNiiSlice(sliceIndex) {
         0
     );
 
-
-    // --------------------------------------------------------
-    // IMPORTANT:
-    // Do NOT use CSS width/height to stretch it.
-    // --------------------------------------------------------
-
     niiCanvas.style.width =
         `${displayWidth}px`;
 
@@ -2418,20 +2329,10 @@ function displayNiiSlice(sliceIndex) {
     niiCanvas.style.aspectRatio =
         "auto";
 
-
-    // ========================================================
-    // LABEL
-    // ========================================================
-
     document.getElementById(
         "sliceLabel"
     ).textContent =
         `${niiCurrentPlane.toUpperCase()} — Slice ${sliceIndex + 1} / ${niiNumSlices}`;
-
-
-    // ========================================================
-    // DEBUG
-    // ========================================================
 
     console.log(
         "NIfTI display dimensions:",
@@ -2453,11 +2354,6 @@ function displayNiiSlice(sliceIndex) {
         }
     );
 }
-
-
-// ------------------------------------------------------------
-// NIFTI SLICE CONTROLS
-// ------------------------------------------------------------
 
 let niiTimerId = null;
 
@@ -2595,10 +2491,6 @@ nextSliceButton.addEventListener(
 );
 
 
-// ------------------------------------------------------------
-// NIFTI SEGMENTATION
-// ------------------------------------------------------------
-
 async function runNiiSegmentation() {
 
     if (
@@ -2646,15 +2538,6 @@ async function runNiiSegmentation() {
             niiCurrentSlice + 1
         );
 
-
-        // ----------------------------------------------------
-        // IMPORTANT:
-        // Make a COPY of the NIfTI image.
-        //
-        // We do NOT use the normal 2D viewer's
-        // lastOriginalCanvas.
-        // ----------------------------------------------------
-
         const niiImageCanvas =
             document.createElement(
                 "canvas"
@@ -2697,11 +2580,6 @@ async function runNiiSegmentation() {
             }
         );
 
-
-        // ----------------------------------------------------
-        // CREATE TENSOR
-        // ----------------------------------------------------
-
         const input =
             await imageToTensor(
                 image
@@ -2712,11 +2590,6 @@ async function runNiiSegmentation() {
             "NIfTI tensor:",
             input.tensor.dims
         );
-
-
-        // ----------------------------------------------------
-        // RUN SEGMENTER
-        // ----------------------------------------------------
 
         const result =
             await runSegmenter(
@@ -2730,18 +2603,8 @@ async function runNiiSegmentation() {
             result.mask.data.length
         );
 
-
-        // ----------------------------------------------------
-        // NIFTI-ONLY CROP
-        // ----------------------------------------------------
-
         niiCropInfo =
             result.crop;
-
-
-        // ----------------------------------------------------
-        // NIFTI-ONLY SEGMENTATION DISPLAY
-        // ----------------------------------------------------
 
         const output =
             document.getElementById(
@@ -2763,10 +2626,6 @@ async function runNiiSegmentation() {
             niiSegmentation
         );
 
-
-        // ----------------------------------------------------
-        // TUMOR AREA
-        // ----------------------------------------------------
 
         const tumorArea =
             analyzeMask(
@@ -2819,11 +2678,7 @@ async function runNiiSegmentation() {
 }
 
 
-// ------------------------------------------------------------
-// NIFTI SEGMENTATION DISPLAY
-//
-// THIS IS SEPARATE FROM displayMask()
-// ------------------------------------------------------------
+//nifti display
 
 function createNiiSegmentationDisplay(
     maskData,
@@ -2868,9 +2723,7 @@ function createNiiSegmentationDisplay(
         crop;
 
 
-    // --------------------------------------------------------
     // CREATE NIFTI MASK
-    // --------------------------------------------------------
 
     niiEditableMask =
         new Uint8Array(
@@ -2902,20 +2755,13 @@ function createNiiSegmentationDisplay(
     }
 
 
-    // --------------------------------------------------------
     // DRAW NIFTI SEGMENTATION
-    // --------------------------------------------------------
 
     drawNiiSegmentation();
 
 
     return canvas;
 }
-
-
-// ------------------------------------------------------------
-// DRAW NIFTI SEGMENTATION
-// ------------------------------------------------------------
 
 function drawNiiSegmentation() {
 
@@ -2967,9 +2813,6 @@ function drawNiiSegmentation() {
         niiMaskOpacity;
 
 
-    // --------------------------------------------------------
-    // MAP 512x512 MASK TO IMAGE
-    // --------------------------------------------------------
 
     const scaleX =
         niiCropInfo.width /
@@ -3105,9 +2948,7 @@ function drawNiiSegmentation() {
 }
 
 
-// ------------------------------------------------------------
-// NIFTI CONTROLS
-// ------------------------------------------------------------
+
 
 document
     .getElementById(
