@@ -446,9 +446,6 @@ body{
     line-height: 1.8;
     white-space: pre-line;
 }
-/* ===============================
-   VIEWER TABS
-   =============================== */
 
 .viewer-tabs {
     width: 100%;
@@ -493,11 +490,6 @@ body{
     background: #429da7;
 }
 
-
-/* ===============================
-   VIEWER PANELS
-   =============================== */
-
 .viewer-panel {
     width: 100%;
     display: none;
@@ -506,11 +498,6 @@ body{
 .viewer-panel.active {
     display: block;
 }
-
-
-/* ===============================
-   NIFTI VIEWER
-   =============================== */
 
 #niiViewer {
     width: 100%;
@@ -558,6 +545,56 @@ body{
     flex-direction: column;
     align-items: center;
     margin-top: 2rem;
+}
+.upload-drop-zone {
+    position: relative;
+    width: min(600px, 90%);
+    min-height: 130px;
+    margin: 1.5rem auto;
+    padding: 25px;
+    border: 2px dashed rgba(255, 255, 255, 0.45);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+.upload-drop-zone:hover,
+.upload-drop-zone.drag-over {
+    border-color: #429da7;
+    background: rgba(66, 157, 167, 0.12);
+    box-shadow: 0 0 25px rgba(66, 157, 167, 0.25);
+}
+
+.upload-drop-zone.drag-over {
+    transform: scale(1.02);
+}
+
+.upload-drop-zone .drop-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.upload-drop-zone .drop-subtitle {
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.upload-drop-zone .uploadButton {
+    margin: 0.5rem auto 0 auto;
+}
+
+.hidden-file-input {
+    display: none;
+}
+
+#niiDropZone {
+    margin-bottom: 1.5rem;
 }
 </style>
 <head>
@@ -633,9 +670,37 @@ body{
             class="info-section">
 
     <p>2D MRI: Please upload an MRI image to analyze. This is used for single slice analysis.</p>
-        <button id="uploadButton" class="uploadButton">
-        <span>Upload MRI Image</span>
-        </button>
+        <div
+    id="mriDropZone"
+    class="upload-drop-zone"
+>
+    <div class="drop-title">
+        Upload 2D MRI
+    </div>
+
+    <div class="drop-subtitle">
+        Drag & drop a PNG or JPEG here
+    </div>
+
+    <div class="drop-subtitle">
+        or
+    </div>
+
+    <button
+        id="uploadButton"
+        class="uploadButton"
+        type="button"
+    >
+        <span>Choose MRI Image</span>
+    </button>
+
+    <input
+        type="file"
+        id="mriInput"
+        class="hidden-file-input"
+        accept="image/png,image/jpeg,image/jpg"
+    >
+</div>
     <p>
     <p>
         NIFTI Viewer: For nifti analysis, click nifti viewer and upload an nii/nii.giz file.
@@ -750,11 +815,37 @@ body{
         <p>
             Upload a NIfTI MRI volume.
         </p>
-        <input
-            type="file"
-            id="niiInput"
-            accept=".nii,.nii.gz"
-        >
+        <div
+    id="niiDropZone"
+    class="upload-drop-zone"
+>
+    <div class="drop-title">
+        Upload NIfTI MRI
+    </div>
+
+    <div class="drop-subtitle">
+        Drag & drop a .nii or .nii.gz file here
+    </div>
+
+    <div class="drop-subtitle">
+        or
+    </div>
+
+    <button
+        id="niiUploadButton"
+        class="uploadButton"
+        type="button"
+    >
+        <span>Choose NIfTI File</span>
+    </button>
+
+    <input
+        type="file"
+        id="niiInput"
+        class="hidden-file-input"
+        accept=".nii,.nii.gz"
+    >
+    </div>
         <div id="niiViewer">
 
             <div id="niiControls">
@@ -853,116 +944,451 @@ body{
 
 <script type="module" src="./main.js"></script>
 <script> 
-uploadButton.addEventListener(
-"click",
-()=>{
-    const progressBar = document.getElementById("myProgressBar");
-    const statusText = document.getElementById("statusText");
+document.addEventListener("DOMContentLoaded", () => {
 
-    const fileInput =
-    document.createElement("input");
+    const uploadButton =
+        document.getElementById("uploadButton");
 
-    fileInput.type = "file";
-    fileInput.accept = "image/*";
+    const mriInput =
+        document.getElementById("mriInput");
 
-    fileInput.click();
-    fileInput.addEventListener('change', (event) => {
-  // Check if at least one file was selected
-  if (event.target.files.length > 0) {
-    const fileName = event.target.files[0].name;
-    getFileName(fileName);
-    console.log("Selected file:", fileName);
-  }
-});
+    const mriDropZone =
+        document.getElementById("mriDropZone");
 
-    fileInput.onchange = async (event) => {
+    const niiInput =
+        document.getElementById("niiInput");
 
-    const file = event.target.files[0];
+    const niiUploadButton =
+        document.getElementById("niiUploadButton");
 
-    if (!file) return;
+    const niiDropZone =
+        document.getElementById("niiDropZone");
 
-    const img = new Image();
 
-    img.src = URL.createObjectURL(file);
+    /* =====================================================
+       2D MRI UPLOAD
+       ===================================================== */
 
-    img.onload = async () => {
+    uploadButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        mriInput.click();
+    });
 
-        imageDisplay.innerHTML = "";
-        imageDisplay.appendChild(img);
+    mriDropZone.addEventListener("click", () => {
+        mriInput.click();
+    });
 
-        document.getElementById(
-            "inferenceStatus"
-        ).innerText = "Inference Started";
+    mriInput.addEventListener("change", (event) => {
 
-        await new Promise(resolve =>
-            requestAnimationFrame(resolve)
-        );
+        const file = event.target.files[0];
 
-        try {
+        if (file) {
+            processMRIFile(file);
+        }
 
-            const results = await analyzeMRI(
-                img,
-                (progress, message) => {
-                    progressBar.value = progress;
-                    statusText.innerText =
-                        `${progress}% - ${message}`;
+    });
+
+
+    /* =====================================================
+       2D MRI DRAG & DROP
+       ===================================================== */
+
+    ["dragenter", "dragover"].forEach(eventName => {
+
+        mriDropZone.addEventListener(eventName, (event) => {
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            mriDropZone.classList.add("drag-over");
+
+        });
+
+    });
+
+
+    ["dragleave", "drop"].forEach(eventName => {
+
+        mriDropZone.addEventListener(eventName, (event) => {
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            mriDropZone.classList.remove("drag-over");
+
+        });
+
+    });
+
+
+    mriDropZone.addEventListener("drop", (event) => {
+
+        const files = event.dataTransfer.files;
+
+        if (!files || files.length === 0) {
+            return;
+        }
+
+        const file = files[0];
+
+        if (!file.type.startsWith("image/")) {
+
+            alert(
+                "Please drop a PNG or JPEG MRI image."
+            );
+
+            return;
+        }
+
+        processMRIFile(file);
+
+    });
+
+
+    /* =====================================================
+       PROCESS 2D MRI
+       ===================================================== */
+
+    async function processMRIFile(file) {
+
+        console.log("MRI file selected:", file.name);
+
+        const progressBar =
+            document.getElementById("myProgressBar");
+
+        const statusText =
+            document.getElementById("statusText");
+
+        const imageDisplay =
+            document.getElementById("imageDisplay");
+
+        const inferenceStatus =
+            document.getElementById("inferenceStatus");
+
+
+        const img = new Image();
+
+        img.src = URL.createObjectURL(file);
+
+
+        img.onload = async () => {
+
+            imageDisplay.innerHTML = "";
+            imageDisplay.appendChild(img);
+
+            inferenceStatus.innerText =
+                "Inference Started";
+
+
+            await new Promise(resolve =>
+                requestAnimationFrame(resolve)
+            );
+
+
+            try {
+
+                const results =
+                    await analyzeMRI(
+                        img,
+                        (progress, message) => {
+
+                            progressBar.value =
+                                progress;
+
+                            statusText.innerText =
+                                `${progress}% - ${message}`;
+
+                        }
+                    );
+
+
+                console.log(
+                    "MRI results:",
+                    results
+                );
+
+
+                let segmentationImage = null;
+
+
+                if (results.canvas) {
+
+                    segmentationImage =
+                        results.canvas.toDataURL(
+                            "image/png"
+                        );
+
+                }
+
+
+                /* ===============================
+                   SEND RESULTS TO VLM
+                   =============================== */
+
+                const response =
+                    await fetch(
+                        "/api/vlm",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                prediction:
+                                    results.prediction,
+
+                                probabilities:
+                                    results.probabilities,
+
+                                tumorArea:
+                                    results.tumorArea,
+
+                                image:
+                                    segmentationImage
+                            })
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `VLM request failed: ${response.status}`
+                    );
+
+                }
+
+
+                const vlmResult =
+                    await response.json();
+
+
+                console.log(
+                    "VLM:",
+                    vlmResult
+                );
+
+
+                document.getElementById(
+                    "vlmOutput"
+                ).innerHTML = `
+                    <h3>AI Explanation</h3>
+                    <p>${vlmResult.result}</p>
+                `;
+
+
+            } catch (error) {
+
+                console.error(
+                    "Analysis/VLM failed:",
+                    error
+                );
+
+                inferenceStatus.innerText =
+                    "Analysis Failed";
+
+            }
+
+        };
+
+
+        img.onerror = () => {
+
+            alert(
+                "Unable to load this image. Please use a PNG or JPEG."
+            );
+
+        };
+
+    }
+
+
+    /* =====================================================
+       NIFTI UPLOAD
+       ===================================================== */
+
+    niiUploadButton.addEventListener(
+        "click",
+        (event) => {
+
+            event.stopPropagation();
+
+            niiInput.click();
+
+        }
+    );
+
+
+    niiDropZone.addEventListener(
+        "click",
+        () => {
+
+            niiInput.click();
+
+        }
+    );
+
+
+    /* =====================================================
+       NIFTI NORMAL FILE SELECTION
+       ===================================================== */
+
+    niiInput.addEventListener(
+        "change",
+        (event) => {
+
+            const file =
+                event.target.files[0];
+
+            if (file) {
+
+                processNiftiFile(file);
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       NIFTI DRAG & DROP
+       ===================================================== */
+
+    ["dragenter", "dragover"].forEach(
+        eventName => {
+
+            niiDropZone.addEventListener(
+                eventName,
+                (event) => {
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    niiDropZone.classList.add(
+                        "drag-over"
+                    );
+
                 }
             );
 
-            console.log("MRI results:", results);
+        }
+    );
 
-            let segmentationImage = null;
 
-            if (results.canvas) {
-                segmentationImage =
-                    results.canvas.toDataURL("image/png");
+    ["dragleave", "drop"].forEach(
+        eventName => {
+
+            niiDropZone.addEventListener(
+                eventName,
+                (event) => {
+
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    niiDropZone.classList.remove(
+                        "drag-over"
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    niiDropZone.addEventListener(
+        "drop",
+        (event) => {
+
+            const files =
+                event.dataTransfer.files;
+
+            if (!files || files.length === 0) {
+                return;
             }
 
-            // Send results to backend
-            const response = await fetch("/api/vlm", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    prediction: results.prediction,
-                    probabilities: results.probabilities,
-                    tumorArea: results.tumorArea,
-                    image: segmentationImage
-                })
-            });
+            const file = files[0];
 
-            if (!response.ok) {
-                throw new Error(
-                    `VLM request failed: ${response.status}`
+            const name =
+                file.name.toLowerCase();
+
+
+            if (
+                !name.endsWith(".nii") &&
+                !name.endsWith(".nii.gz")
+            ) {
+
+                alert(
+                    "Please drop a .nii or .nii.gz NIfTI file."
                 );
+
+                return;
+
             }
 
-            const vlmResult = await response.json();
 
-            console.log("VLM:", vlmResult);
+            processNiftiFile(file);
 
-            document.getElementById(
-                "vlmOutput"
-            ).innerHTML = `
-                <h3>AI Explanation</h3>
-                <p>${vlmResult.result}</p>
-            `;
+        }
+    );
+
+
+    /* =====================================================
+       PROCESS NIFTI
+       ===================================================== */
+
+    function processNiftiFile(file) {
+
+        console.log(
+            "NIfTI file selected:",
+            file.name
+        );
+
+
+        /*
+         * Put the file into the existing
+         * niiInput so your current NIfTI
+         * code can use it if necessary.
+         */
+
+        try {
+
+            const dataTransfer =
+                new DataTransfer();
+
+            dataTransfer.items.add(file);
+
+            niiInput.files =
+                dataTransfer.files;
 
         } catch (error) {
 
-            console.error(
-                "Analysis/VLM failed:",
+            console.warn(
+                "Could not assign file to niiInput:",
                 error
             );
 
         }
 
-    };
 
-};
+        /*
+         * Trigger the same change event
+         * your existing NIfTI code listens for.
+         */
+
+        niiInput.dispatchEvent(
+            new Event("change", {
+                bubbles: true
+            })
+        );
+
+    }
 
 });
+</script>
    </script>
       <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
   <script>

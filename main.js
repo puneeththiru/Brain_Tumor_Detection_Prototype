@@ -775,7 +775,7 @@ function displayMask(
     );
 
 
-    controlPoints = generateControlPoints(editableMask);
+    controlPoints = []
     redrawMask(
         originalCanvas
     );
@@ -852,65 +852,137 @@ function analyzeMask(mask){
 // Load both models
 async function loadModels() {
 
-    classifierSession =
-await ort.InferenceSession.create(
-    "./models/brain_tum_classifier_b3.onnx",
-    {
-        executionProviders: ["wasm"],
-        externalData: [
-            {
-                path: "brain_tum_classifier_b3.onnx.data",
-                data: "./models/brain_tum_classifier_b3.onnx.data"
-            }
-        ]
-    }
-);
-    console.log("Classifier loaded");
-    document.getElementById("classificationStatus"
-    ).querySelector("span").innerHTML = "Classification Model Loaded";
-    const classifier = document.getElementById("classificationStatus")
-    classifier.style.background = `linear-gradient(
-        to right,
-        #656565,
-        #5ee03d,
-        #30e02a,
-        #0fc22f,
-        #757575,
-        #656565
-    )`;
-    classifier.style.backgroundSize = `200%`;
-    classifier.style.animation = `animationGradient 0.5s linear infinite, vibrate 1s infinite`;
-    classifier.style.boxShadow= `0 0 15px rgba(255,255,255,0.9)`;
-    segmenterSession =
-        await ort.InferenceSession.create(
-    "./models/brain_unet_b3.onnx",
-    {
-        executionProviders: ["wasm"],
-        externalData: [
-            {
-                path: "brain_unet_b3.onnx.data",
-                data: "./models/brain_unet_b3.onnx.data"
-            }
-        ]
-    }
-);
+    try {
 
-    console.log("Segmenter loaded");
-    document.getElementById("segmentationStatus"
-    ).querySelector("span").innerHTML = "Segmentation Model Loaded";
-    const segmenter = document.getElementById("segmentationStatus")
-    segmenter.style.background = `linear-gradient(
-        to right,
-        #656565,
-        #5ee03d,
-        #30e02a,
-        #0fc22f,
-        #757575,
-        #656565
-    )`;
-    segmenter.style.backgroundSize = `200%`;
-    segmenter.style.animation = `animationGradient 0.5s linear infinite, vibrate 1s infinite`;
-    segmenter.style.boxShadow= `0 0 15px rgba(255,255,255,0.9)`;
+        console.log("Loading ONNX Runtime...");
+        console.log("ORT version:", ort.env.version);
+
+        // Use the normal WASM backend.
+        ort.env.wasm.wasmPaths =
+            "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/";
+
+        // Start with single-threaded WASM while debugging.
+        ort.env.wasm.numThreads = 1;
+
+        console.log("Loading classifier...");
+
+        classifierSession =
+            await ort.InferenceSession.create(
+                "./models/brain_tum_classifier_b3_embed.onnx",
+                {
+                    executionProviders: ["wasm"]
+                }
+            );
+
+        console.log(
+            "Classifier loaded:",
+            classifierSession.inputNames,
+            classifierSession.outputNames
+        );
+
+        document
+            .getElementById("classificationStatus")
+            .querySelector("span")
+            .innerHTML =
+                "Classification Model Loaded";
+
+
+        const classifier =
+            document.getElementById(
+                "classificationStatus"
+            );
+
+        classifier.style.background =
+            `linear-gradient(
+                to right,
+                #656565,
+                #5ee03d,
+                #30e02a,
+                #0fc22f,
+                #757575,
+                #656565
+            )`;
+
+        classifier.style.backgroundSize = "200%";
+
+        classifier.style.animation =
+            "animationGradient 0.5s linear infinite, vibrate 1s infinite";
+
+        classifier.style.boxShadow =
+            "0 0 15px rgba(255,255,255,0.9)";
+
+
+        console.log("Loading segmenter...");
+
+        segmenterSession =
+            await ort.InferenceSession.create(
+                "./models/brain_unet_b3_embed.onnx",
+                {
+                    executionProviders: ["wasm"]
+                }
+            );
+
+        console.log(
+            "Segmenter loaded:",
+            segmenterSession.inputNames,
+            segmenterSession.outputNames
+        );
+
+        document
+            .getElementById("segmentationStatus")
+            .querySelector("span")
+            .innerHTML =
+                "Segmentation Model Loaded";
+
+
+        const segmenter =
+            document.getElementById(
+                "segmentationStatus"
+            );
+
+        segmenter.style.background =
+            `linear-gradient(
+                to right,
+                #656565,
+                #5ee03d,
+                #30e02a,
+                #0fc22f,
+                #757575,
+                #656565
+            )`;
+
+        segmenter.style.backgroundSize = "200%";
+
+        segmenter.style.animation =
+            "animationGradient 0.5s linear infinite, vibrate 1s infinite";
+
+        segmenter.style.boxShadow =
+            "0 0 15px rgba(255,255,255,0.9)";
+
+
+        console.log("Both ONNX models loaded successfully.");
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "ONNX model loading failed:",
+            error
+        );
+
+        console.error(
+            "ORT version:",
+            ort.env.version
+        );
+
+        console.error(
+            "WASM paths:",
+            ort.env.wasm.wasmPaths
+        );
+
+        throw error;
+    }
 }
 
 function foregroundCrop(rgb, width, height, margin=10){
@@ -1333,13 +1405,36 @@ async function analyzeMRI(img, progressCallback) {
         dotSpan.textContent = 'Turn on Dots';
         dotSpan.className = 'front';
         dotButton.appendChild(dotSpan)
-        dotButton.addEventListener('click', () => {dotVisibility++;
-            switchButtonClicks++;
-            if (switchButtonClicks%2 === 0){
-            dotSpan.textContent = 'Turn on Dots';
-        }
-        else{dotSpan.textContent = 'Turn off Dots';}
-            redrawMask(lastOriginalCanvas);});
+        dotButton.addEventListener("click", () => {
+
+    dotVisibility++;
+    switchButtonClicks++;
+
+    if (dotVisibility % 2 === 1) {
+
+        // Turn dots ON
+        controlPoints =
+            generateControlPoints(
+                editableMask
+            );
+
+        dotSpan.textContent =
+            "Turn off Dots";
+    }
+
+    else {
+
+        // Turn dots OFF
+        controlPoints = [];
+
+        dotSpan.textContent =
+            "Turn on Dots";
+    }
+
+    redrawMask(
+        lastOriginalCanvas
+    );
+});
     const undoButton = document.createElement('button');
     undoButton.id = 'undo';
     undoButton.type = 'button';
@@ -1523,42 +1618,80 @@ import * as nifti from "https://cdn.jsdelivr.net/npm/nifti-reader-js@0.7.1/+esm"
 
 console.log("NIfTI reader loaded:", nifti);
 
+// ============================================================
 // NIFTI VIEWER
+// COMPLETELY SEPARATE FROM THE NORMAL 2D VIEWER
+// ============================================================
 
-const input = document.getElementById("niiInput");
-const canvas = document.getElementById("mriCanvas");
-const ctx = canvas.getContext("2d");
+const niiInput = document.getElementById("niiInput");
+
+// IMPORTANT:
+// This canvas belongs ONLY to the NIfTI viewer.
+// It is NOT the same canvas used by the 2D image viewer.
+const niiCanvas = document.getElementById("mriCanvas");
+const niiCtx = niiCanvas.getContext("2d");
 
 let niftiHeader = null;
 let niftiImage = null;
 
-let currentSlice = 0;
-let numSlices = 1;
+let niiCurrentSlice = 0;
+let niiNumSlices = 1;
+let niiCurrentPlane = "axial";
 
-// Current anatomical plane
-// "axial"    = XY, moving through Z
-// "coronal"  = XZ, moving through Y
-// "sagittal" = YZ, moving through X
-let currentPlane = "axial";
+// ------------------------------------------------------------
+// NIFTI-ONLY SEGMENTATION STATE
+// ------------------------------------------------------------
 
-input.addEventListener("change", async (event) => {
+let niiSegmentationCanvas = null;
+let niiSegmentationCtx = null;
+
+let niiEditableMask = null;
+let niiLastOriginalCanvas = null;
+let niiCropInfo = null;
+
+let niiMaskOffsetX = 0;
+let niiMaskOffsetY = 0;
+
+let niiMaskOpacity = 0.2;
+
+// ------------------------------------------------------------
+// LOAD NIFTI
+// ------------------------------------------------------------
+
+niiInput.addEventListener("change", async (event) => {
 
     const file = event.target.files[0];
 
     if (!file) return;
 
-    const arrayBuffer =
-        await file.arrayBuffer();
+    try {
 
-    loadNifti(arrayBuffer);
+        let arrayBuffer = await file.arrayBuffer();
 
+        loadNifti(arrayBuffer);
+
+    } catch (error) {
+
+        console.error(
+            "Failed to load NIfTI:",
+            error
+        );
+
+        alert(
+            "Failed to load NIfTI file."
+        );
+    }
 });
 
 
+// ------------------------------------------------------------
+// LOAD NIFTI DATA
+// ------------------------------------------------------------
+
 function loadNifti(arrayBuffer) {
 
-    // Handle .nii.gz
     if (nifti.isCompressed(arrayBuffer)) {
+
         arrayBuffer =
             nifti.decompress(arrayBuffer);
     }
@@ -1587,12 +1720,12 @@ function loadNifti(arrayBuffer) {
     );
 
     console.log(
-        "Image:",
+        "NIfTI image:",
         niftiImage
     );
 
     console.log(
-        "Dimensions:",
+        "NIfTI dimensions:",
         {
             x: niftiHeader.dims[1],
             y: niftiHeader.dims[2],
@@ -1600,18 +1733,26 @@ function loadNifti(arrayBuffer) {
         }
     );
 
-    currentPlane = "axial";
+    niiCurrentPlane = "axial";
 
-    updateSliceCount();
+    updateNiiSliceCount();
 
-    currentSlice =
-        Math.floor(numSlices / 2);
+    niiCurrentSlice =
+        Math.floor(
+            niiNumSlices / 2
+        );
 
-    displaySlice(currentSlice);
+    displayNiiSlice(
+        niiCurrentSlice
+    );
 }
 
 
-function getTypedArray(
+// ------------------------------------------------------------
+// NIFTI DATATYPE
+// ------------------------------------------------------------
+
+function getNiiTypedArray(
     header,
     imageBuffer
 ) {
@@ -1650,64 +1791,15 @@ function getTypedArray(
     }
 }
 
-function updateSliceCount() {
 
-    const x =
-        niftiHeader.dims[1];
+// ------------------------------------------------------------
+// UPDATE SLICE COUNT
+// ------------------------------------------------------------
 
-    const y =
-        niftiHeader.dims[2];
-
-    const z =
-        niftiHeader.dims[3];
-
-    if (currentPlane === "axial") {
-
-        numSlices = z;
-
-    }
-
-    else if (currentPlane === "coronal") {
-
-        numSlices = y;
-
-    }
-
-    else if (currentPlane === "sagittal") {
-
-        numSlices = x;
-
-    }
-
-}
-
-
-function setPlane(plane) {
+function updateNiiSliceCount() {
 
     if (!niftiHeader)
         return;
-
-    currentPlane = plane;
-
-    updateSliceCount();
-
-    currentSlice =
-        Math.floor(numSlices / 2);
-
-    displaySlice(currentSlice);
-
-}
-
-function displaySlice(sliceIndex) {
-
-    if (!niftiHeader || !niftiImage)
-        return;
-
-    const data =
-        getTypedArray(
-            niftiHeader,
-            niftiImage
-        );
 
     const X =
         niftiHeader.dims[1];
@@ -1718,56 +1810,202 @@ function displaySlice(sliceIndex) {
     const Z =
         niftiHeader.dims[3];
 
+    if (niiCurrentPlane === "axial") {
+
+        niiNumSlices = Z;
+
+    }
+
+    else if (niiCurrentPlane === "coronal") {
+
+        niiNumSlices = Y;
+
+    }
+
+    else if (niiCurrentPlane === "sagittal") {
+
+        niiNumSlices = X;
+
+    }
+}
+
+
+// ------------------------------------------------------------
+// CHANGE PLANE
+// ------------------------------------------------------------
+
+function setNiiPlane(plane) {
+
+    if (!niftiHeader)
+        return;
+
+    niiCurrentPlane = plane;
+
+    updateNiiSliceCount();
+
+    niiCurrentSlice =
+        Math.floor(
+            niiNumSlices / 2
+        );
+
+    displayNiiSlice(
+        niiCurrentSlice
+    );
+}
+
+
+// ------------------------------------------------------------
+// DISPLAY NIFTI SLICE
+// ------------------------------------------------------------
+
+// ============================================================
+// DISPLAY NIFTI SLICE
+// PRESERVES VOXEL SPACING + FITS ENTIRE SLICE
+// ============================================================
+
+function displayNiiSlice(sliceIndex) {
+
+    if (!niftiHeader || !niftiImage)
+        return;
+
+    const data =
+        getNiiTypedArray(
+            niftiHeader,
+            niftiImage
+        );
+
+    const X = niftiHeader.dims[1];
+    const Y = niftiHeader.dims[2];
+    const Z = niftiHeader.dims[3];
+
+    // --------------------------------------------------------
+    // NIFTI VOXEL SPACING
+    // --------------------------------------------------------
+
+    const spacingX =
+        Math.abs(niftiHeader.pixDims[1]) || 1;
+
+    const spacingY =
+        Math.abs(niftiHeader.pixDims[2]) || 1;
+
+    const spacingZ =
+        Math.abs(niftiHeader.pixDims[3]) || 1;
+
+
+    // --------------------------------------------------------
+    // DETERMINE SLICE DIMENSIONS
+    //
+    // width/height = number of voxels
+    // physicalWidth/Height = millimeters
+    // --------------------------------------------------------
 
     let width;
     let height;
 
+    let physicalWidth;
+    let physicalHeight;
 
-    // AXIAL
-    // XY plane
 
-    if (currentPlane === "axial") {
+    if (
+        niiCurrentPlane === "axial"
+    ) {
 
+        // XY plane
         width = X;
         height = Y;
 
+        physicalWidth =
+            X * spacingX;
+
+        physicalHeight =
+            Y * spacingY;
     }
-    // CORONAL
-    // XZ plane
 
-    else if (currentPlane === "coronal") {
 
+    else if (
+        niiCurrentPlane === "coronal"
+    ) {
+
+        // XZ plane
         width = X;
         height = Z;
 
+        physicalWidth =
+            X * spacingX;
+
+        physicalHeight =
+            Z * spacingZ;
     }
 
-    // SAGITTAL
-    // YZ plane
 
     else {
 
+        // YZ plane
         width = Y;
         height = Z;
 
+        physicalWidth =
+            Y * spacingY;
+
+        physicalHeight =
+            Z * spacingZ;
     }
 
 
-    canvas.width = width;
-    canvas.height = height;
+    console.log(
+        "NIfTI slice geometry:",
+        {
+            plane: niiCurrentPlane,
+
+            voxelDimensions: {
+                width,
+                height
+            },
+
+            voxelSpacing: {
+                X: spacingX,
+                Y: spacingY,
+                Z: spacingZ
+            },
+
+            physicalDimensions: {
+                width: physicalWidth,
+                height: physicalHeight
+            }
+        }
+    );
+
+
+    // ========================================================
+    // CREATE RAW SLICE
+    // ========================================================
+
+    const rawCanvas =
+        document.createElement("canvas");
+
+    rawCanvas.width = width;
+    rawCanvas.height = height;
+
+    const rawCtx =
+        rawCanvas.getContext("2d");
 
 
     const imageData =
-        ctx.createImageData(
+        rawCtx.createImageData(
             width,
             height
         );
 
+
+    // ========================================================
+    // VOXEL INDEX
+    // ========================================================
+
     function getVoxelIndex(px, py) {
 
-        // AXIAL
-
-        if (currentPlane === "axial") {
+        if (
+            niiCurrentPlane === "axial"
+        ) {
 
             const x = px;
             const y = py;
@@ -1778,22 +2016,18 @@ function displaySlice(sliceIndex) {
                 y * X +
                 z * X * Y
             );
-
         }
 
 
-        // CORONAL
-
-        else if (currentPlane === "coronal") {
+        else if (
+            niiCurrentPlane === "coronal"
+        ) {
 
             const x = px;
 
-            /*
-             * Flip Z vertically.
-             *
-             * This makes superior appear
-             * toward the top of the image.
-             */
+            // Flip Z vertically so
+            // superior is at the top.
+
             const z =
                 Z - 1 - py;
 
@@ -1805,18 +2039,17 @@ function displaySlice(sliceIndex) {
                 y * X +
                 z * X * Y
             );
-
         }
 
 
-        // SAGITTAL
-
         else {
 
-            /*
-             * Horizontal axis = Y
-             * Vertical axis   = Z
-             */
+            // ------------------------------------------------
+            // SAGITTAL
+            //
+            // Horizontal = Y
+            // Vertical   = Z
+            // ------------------------------------------------
 
             const y =
                 Y - 1 - px;
@@ -1832,14 +2065,15 @@ function displaySlice(sliceIndex) {
                 y * X +
                 z * X * Y
             );
-
         }
-
     }
 
-    let min = Infinity;
-    let max = -Infinity;
 
+    // ========================================================
+    // FIND INTENSITY RANGE
+    // ========================================================
+
+    const values = [];
 
     for (
         let py = 0;
@@ -1862,22 +2096,64 @@ function displaySlice(sliceIndex) {
             const value =
                 data[voxelIndex];
 
-
             if (
-                Number.isFinite(value)
+                Number.isFinite(value) &&
+                value > 10
             ) {
 
-                if (value < min)
-                    min = value;
-
-                if (value > max)
-                    max = value;
-
+                values.push(value);
             }
-
         }
-
     }
+
+
+    let min = 0;
+    let max = 1;
+
+
+    if (values.length > 0) {
+
+        values.sort(
+            (a, b) => a - b
+        );
+
+
+        const lowIndex =
+            Math.floor(
+                values.length * 0.01
+            );
+
+
+        const highIndex =
+            Math.floor(
+                values.length * 0.99
+            );
+
+
+        min =
+            values[lowIndex];
+
+
+        max =
+            values[highIndex];
+
+
+        if (max <= min) {
+
+            min =
+                values[0];
+
+            max =
+                values[
+                    values.length - 1
+                ];
+        }
+    }
+
+
+    // ========================================================
+    // RENDER RAW SLICE
+    // ========================================================
 
     for (
         let py = 0;
@@ -1897,314 +2173,576 @@ function displaySlice(sliceIndex) {
                     py
                 );
 
+
             const value =
                 data[voxelIndex];
 
 
-            let normalized = 0;
+            let intensity = 0;
 
 
             if (
-                max !== min &&
-                Number.isFinite(value)
+                Number.isFinite(value) &&
+                value > 0
             ) {
+
+                let normalized =
+                    (
+                        value - min
+                    ) /
+                    (
+                        max - min
+                    );
+
 
                 normalized =
-                    (value - min) /
-                    (max - min);
+                    Math.max(
+                        0,
+                        Math.min(
+                            1,
+                            normalized
+                        )
+                    );
 
+
+                intensity =
+                    Math.round(
+                        normalized * 255
+                    );
             }
 
 
-            const intensity =
-                Math.max(
-                    0,
-                    Math.min(
-                        255,
-                        Math.round(
-                            normalized * 255
-                        )
-                    )
-                );
-
-
-            const pixelIndex =
+            const i =
                 (
                     py * width +
                     px
                 ) * 4;
 
 
-            imageData.data[
-                pixelIndex
-            ] =
+            imageData.data[i] =
                 intensity;
 
-            imageData.data[
-                pixelIndex + 1
-            ] =
+            imageData.data[i + 1] =
                 intensity;
 
-            imageData.data[
-                pixelIndex + 2
-            ] =
+            imageData.data[i + 2] =
                 intensity;
 
-            imageData.data[
-                pixelIndex + 3
-            ] =
+            imageData.data[i + 3] =
                 255;
-
         }
-
     }
 
-    ctx.putImageData(
+
+    rawCtx.putImageData(
         imageData,
         0,
         0
     );
 
-    const spacingX =
-        Math.abs(
-            niftiHeader.pixDims[1]
-        ) || 1;
 
-    const spacingY =
-        Math.abs(
-            niftiHeader.pixDims[2]
-        ) || 1;
+    // ========================================================
+    // FIT TO VIEWER WHILE PRESERVING PHYSICAL ASPECT RATIO
+    // ========================================================
 
-    const spacingZ =
-        Math.abs(
-            niftiHeader.pixDims[3]
-        ) || 1;
+    const maxDisplayWidth = 900;
+    const maxDisplayHeight = 650;
 
 
-    let physicalWidth;
-    let physicalHeight;
+    // --------------------------------------------------------
+    // THIS IS THE IMPORTANT PART.
+    //
+    // The aspect ratio is based on MILLIMETERS,
+    // not simply voxel counts.
+    // --------------------------------------------------------
 
-
-    if (
-        currentPlane === "axial"
-    ) {
-
-        physicalWidth =
-            X * spacingX;
-
-        physicalHeight =
-            Y * spacingY;
-
-    }
-
-    else if (
-        currentPlane === "coronal"
-    ) {
-
-        physicalWidth =
-            X * spacingX;
-
-        physicalHeight =
-            Z * spacingZ;
-
-    }
-
-    else {
-
-        physicalWidth =
-            Y * spacingY;
-
-        physicalHeight =
-            Z * spacingZ;
-
-    }
-
-
-    const maxDisplaySize = 600;
-
-    const aspectRatio =
+    const physicalAspectRatio =
         physicalWidth /
         physicalHeight;
 
 
-    let displayWidth;
-    let displayHeight;
+    // Start by fitting width.
+
+    let displayWidth =
+        maxDisplayWidth;
 
 
-    if (aspectRatio >= 1) {
+    let displayHeight =
+        displayWidth /
+        physicalAspectRatio;
 
-        displayWidth =
-            maxDisplaySize;
+
+    // If height is too large, fit by height instead.
+
+    if (
+        displayHeight >
+        maxDisplayHeight
+    ) {
 
         displayHeight =
-            maxDisplaySize /
-            aspectRatio;
+            maxDisplayHeight;
 
-    }
-
-    else {
-
-        displayHeight =
-            maxDisplaySize;
 
         displayWidth =
-            maxDisplaySize *
-            aspectRatio;
-
+            displayHeight *
+            physicalAspectRatio;
     }
 
 
-    canvas.style.width =
+    displayWidth =
+        Math.max(
+            1,
+            Math.round(
+                displayWidth
+            )
+        );
+
+
+    displayHeight =
+        Math.max(
+            1,
+            Math.round(
+                displayHeight
+            )
+        );
+
+
+    // ========================================================
+    // CREATE DISPLAY CANVAS
+    // ========================================================
+
+    const displayCanvas =
+        document.createElement(
+            "canvas"
+        );
+
+
+    displayCanvas.width =
+        displayWidth;
+
+
+    displayCanvas.height =
+        displayHeight;
+
+
+    const displayCtx =
+        displayCanvas.getContext(
+            "2d"
+        );
+
+
+    displayCtx.imageSmoothingEnabled =
+        true;
+
+
+    displayCtx.imageSmoothingQuality =
+        "high";
+
+
+    // --------------------------------------------------------
+    // DRAW ENTIRE SLICE
+    //
+    // The source is the ENTIRE raw slice.
+    //
+    // Because displayWidth/displayHeight were calculated
+    // from physical dimensions, the image is not distorted.
+    // --------------------------------------------------------
+
+    displayCtx.drawImage(
+        rawCanvas,
+
+        0,
+        0,
+        width,
+        height,
+
+        0,
+        0,
+        displayWidth,
+        displayHeight
+    );
+
+
+    // ========================================================
+    // DRAW TO NIFTI CANVAS ONLY
+    // ========================================================
+
+    niiCanvas.width =
+        displayWidth;
+
+
+    niiCanvas.height =
+        displayHeight;
+
+
+    niiCtx.clearRect(
+        0,
+        0,
+        displayWidth,
+        displayHeight
+    );
+
+
+    niiCtx.imageSmoothingEnabled =
+        true;
+
+
+    niiCtx.imageSmoothingQuality =
+        "high";
+
+
+    niiCtx.drawImage(
+        displayCanvas,
+        0,
+        0
+    );
+
+
+    // --------------------------------------------------------
+    // IMPORTANT:
+    // Do NOT use CSS width/height to stretch it.
+    // --------------------------------------------------------
+
+    niiCanvas.style.width =
         `${displayWidth}px`;
 
-    canvas.style.height =
+
+    niiCanvas.style.height =
         `${displayHeight}px`;
+
+
+    niiCanvas.style.display =
+        "block";
+
+
+    niiCanvas.style.aspectRatio =
+        "auto";
+
+
+    // ========================================================
+    // LABEL
+    // ========================================================
 
     document.getElementById(
         "sliceLabel"
     ).textContent =
-        `${currentPlane.toUpperCase()} — Slice ${sliceIndex + 1} / ${numSlices}`;
+        `${niiCurrentPlane.toUpperCase()} — Slice ${sliceIndex + 1} / ${niiNumSlices}`;
 
+
+    // ========================================================
+    // DEBUG
+    // ========================================================
+
+    console.log(
+        "NIfTI display dimensions:",
+        {
+            voxelWidth: width,
+            voxelHeight: height,
+
+            spacingX,
+            spacingY,
+            spacingZ,
+
+            physicalWidth,
+            physicalHeight,
+
+            physicalAspectRatio,
+
+            displayWidth,
+            displayHeight
+        }
+    );
 }
 
-let timerId = null;
-function previousSlice(){
-if (currentSlice > 0) {
 
-                currentSlice--;
+// ------------------------------------------------------------
+// NIFTI SLICE CONTROLS
+// ------------------------------------------------------------
 
-                displaySlice(
-                    currentSlice
-                );
+let niiTimerId = null;
 
-            }
+function previousNiiSlice() {
+
+    if (
+        niiCurrentSlice > 0
+    ) {
+
+        niiCurrentSlice--;
+
+        displayNiiSlice(
+            niiCurrentSlice
+        );
+    }
 }
-function nextSlice(){
+
+
+function nextNiiSlice() {
+
+    if (
+        niiCurrentSlice <
+        niiNumSlices - 1
+    ) {
+
+        niiCurrentSlice++;
+
+        displayNiiSlice(
+            niiCurrentSlice
+        );
+    }
+}
+
+
+const prevSliceButton =
+    document.getElementById(
+        "prevSlice"
+    );
+
+const nextSliceButton =
+    document.getElementById(
+        "nextSlice"
+    );
+
+
+prevSliceButton.addEventListener(
+    "mousedown",
+    () => {
+
+        previousNiiSlice();
+
         if (
-                currentSlice <
-                numSlices - 1
-            ) {
+            niiTimerId !== null
+        )
+            return;
 
-                currentSlice++;
+        niiTimerId =
+            setInterval(
+                previousNiiSlice,
+                100
+            );
+    }
+);
 
-                displaySlice(
-                    currentSlice
-                );
 
-            }
-}
-document
-    .getElementById("prevSlice")
-    .addEventListener(
-        "mousedown",
-        () => {
-            previousSlice();
-            if (timerId !== null) return;
-            timerId = setInterval(previousSlice, 100); // Runs every 100 milliseconds
+prevSliceButton.addEventListener(
+    "mouseup",
+    () => {
 
-        }
-    );
-document
-    .getElementById("prevSlice")
-    .addEventListener(
-        "mouseup",
-        () =>{
-            clearInterval(timerId);
-            timerId = null;
-        }
-    )
+        clearInterval(
+            niiTimerId
+        );
 
-document
-    .getElementById("nextSlice")
-    .addEventListener(
-        "mousedown",
-        () => {
-            nextSlice();
-            if (timerId !== null) return;
-            timerId = setInterval(nextSlice, 100); // Runs every 100 milliseconds
+        niiTimerId = null;
+    }
+);
 
-        }
-    );
-document
-    .getElementById("nextSlice")
-    .addEventListener(
-        "mouseup",
-        () => {
-            clearInterval(timerId);
-            timerId = null;
-        }
-    );
+
+prevSliceButton.addEventListener(
+    "mouseleave",
+    () => {
+
+        clearInterval(
+            niiTimerId
+        );
+
+        niiTimerId = null;
+    }
+);
+
+
+nextSliceButton.addEventListener(
+    "mousedown",
+    () => {
+
+        nextNiiSlice();
+
+        if (
+            niiTimerId !== null
+        )
+            return;
+
+        niiTimerId =
+            setInterval(
+                nextNiiSlice,
+                100
+            );
+    }
+);
+
+
+nextSliceButton.addEventListener(
+    "mouseup",
+    () => {
+
+        clearInterval(
+            niiTimerId
+        );
+
+        niiTimerId = null;
+    }
+);
+
+
+nextSliceButton.addEventListener(
+    "mouseleave",
+    () => {
+
+        clearInterval(
+            niiTimerId
+        );
+
+        niiTimerId = null;
+    }
+);
+
+
+// ------------------------------------------------------------
+// NIFTI SEGMENTATION
+// ------------------------------------------------------------
+
 async function runNiiSegmentation() {
 
-    if (!niftiHeader || !niftiImage) {
-        alert("Please load a NIfTI file first.");
+    if (
+        !niftiHeader ||
+        !niftiImage
+    ) {
+
+        alert(
+            "Please load a NIfTI file first."
+        );
+
         return;
     }
 
     if (!segmenterSession) {
-        alert("Segmentation model is still loading.");
+
+        alert(
+            "Segmentation model is still loading."
+        );
+
         return;
     }
 
-    console.log(
-        "Running segmentation on NIfTI slice:",
-        currentSlice + 1
-    );
-
     const button =
-        document.getElementById("runNiiSegmentation");
+        document.getElementById(
+            "runNiiSegmentation"
+        );
 
     const buttonText =
-        button.querySelector(".front");
+        button.querySelector(
+            ".front"
+        );
 
     button.disabled = true;
-    buttonText.textContent = "Running...";
+
+    buttonText.textContent =
+        "Running...";
+
 
     try {
-        // Make sure the current slice is displayed
-        displaySlice(currentSlice);
 
-        // Convert the displayed NIfTI canvas into an image
-        const image = new Image();
+        console.log(
+            "Running NIfTI segmentation:",
+            niiCurrentPlane,
+            niiCurrentSlice + 1
+        );
 
-        image.src = canvas.toDataURL("image/png");
 
-        await new Promise((resolve, reject) => {
+        // ----------------------------------------------------
+        // IMPORTANT:
+        // Make a COPY of the NIfTI image.
+        //
+        // We do NOT use the normal 2D viewer's
+        // lastOriginalCanvas.
+        // ----------------------------------------------------
 
-            image.onload = resolve;
-            image.onerror = reject;
+        const niiImageCanvas =
+            document.createElement(
+                "canvas"
+            );
 
-        });
+        niiImageCanvas.width =
+            niiCanvas.width;
 
-        /*
-         * Run the SAME preprocessing
-         */
+        niiImageCanvas.height =
+            niiCanvas.height;
+
+        const niiImageCtx =
+            niiImageCanvas.getContext(
+                "2d"
+            );
+
+        niiImageCtx.drawImage(
+            niiCanvas,
+            0,
+            0
+        );
+
+
+        const image =
+            new Image();
+
+        image.src =
+            niiImageCanvas.toDataURL(
+                "image/png"
+            );
+
+        await new Promise(
+            (resolve, reject) => {
+
+                image.onload =
+                    resolve;
+
+                image.onerror =
+                    reject;
+            }
+        );
+
+
+        // ----------------------------------------------------
+        // CREATE TENSOR
+        // ----------------------------------------------------
+
         const input =
-            await imageToTensor(image);
+            await imageToTensor(
+                image
+            );
+
 
         console.log(
             "NIfTI tensor:",
             input.tensor.dims
         );
 
-        // Run segmentation
+
+        // ----------------------------------------------------
+        // RUN SEGMENTER
+        // ----------------------------------------------------
+
         const result =
-            await runSegmenter(input);
+            await runSegmenter(
+                input
+            );
+
 
         console.log(
-            "NIfTI segmentation result:",
+            "NIfTI segmentation:",
             result.mask.dims,
             result.mask.data.length
         );
 
-        /*
-         * Store crop information 
-         */
-        cropInfo = result.crop;
 
-        /*
-         * Remove previous segmentation canvas
-         */
+        // ----------------------------------------------------
+        // NIFTI-ONLY CROP
+        // ----------------------------------------------------
+
+        niiCropInfo =
+            result.crop;
+
+
+        // ----------------------------------------------------
+        // NIFTI-ONLY SEGMENTATION DISPLAY
+        // ----------------------------------------------------
+
         const output =
             document.getElementById(
                 "niiSegmentationOutput"
@@ -2212,41 +2750,53 @@ async function runNiiSegmentation() {
 
         output.innerHTML = "";
 
-        //display
-        const segmentationCanvas =
-            displayMask(
+
+        const niiSegmentation =
+            createNiiSegmentationDisplay(
                 result.mask.data,
                 result.originalCanvas,
                 result.crop
             );
 
+
         output.appendChild(
-            segmentationCanvas
+            niiSegmentation
         );
 
-        //tumor area
+
+        // ----------------------------------------------------
+        // TUMOR AREA
+        // ----------------------------------------------------
+
         const tumorArea =
             analyzeMask(
                 result.mask.data
             );
 
+
         const info =
-            document.createElement("p");
+            document.createElement(
+                "p"
+            );
 
         info.innerHTML =
             `Tumor Pixel Area:
              <b>${tumorArea}%</b>`;
 
+
         output.insertBefore(
             info,
-            segmentationCanvas
+            niiSegmentation
         );
+
 
         console.log(
             "NIfTI segmentation complete."
         );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "NIfTI segmentation failed:",
@@ -2257,37 +2807,358 @@ async function runNiiSegmentation() {
             "Segmentation failed. Check the browser console."
         );
 
-    } finally {
+    }
+
+    finally {
 
         button.disabled = false;
-        buttonText.textContent = "Run Segmentation";
 
+        buttonText.textContent =
+            "Run Segmentation";
     }
 }
 
+
+// ------------------------------------------------------------
+// NIFTI SEGMENTATION DISPLAY
+//
+// THIS IS SEPARATE FROM displayMask()
+// ------------------------------------------------------------
+
+function createNiiSegmentationDisplay(
+    maskData,
+    originalCanvas,
+    crop
+) {
+
+    console.log(
+        "Creating NIfTI segmentation display"
+    );
+
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width =
+        originalCanvas.width;
+
+    canvas.height =
+        originalCanvas.height;
+
+
+    const ctx =
+        canvas.getContext(
+            "2d"
+        );
+
+
+    // Save NIfTI-only state
+    niiSegmentationCanvas =
+        canvas;
+
+    niiSegmentationCtx =
+        ctx;
+
+    niiLastOriginalCanvas =
+        originalCanvas;
+
+    niiCropInfo =
+        crop;
+
+
+    // --------------------------------------------------------
+    // CREATE NIFTI MASK
+    // --------------------------------------------------------
+
+    niiEditableMask =
+        new Uint8Array(
+            maskData.length
+        );
+
+
+    for (
+        let i = 0;
+        i < maskData.length;
+        i++
+    ) {
+
+        const probability =
+            1 /
+            (
+                1 +
+                Math.exp(
+                    -maskData[i]
+                )
+            );
+
+        if (
+            probability > 0.5
+        ) {
+
+            niiEditableMask[i] = 1;
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // DRAW NIFTI SEGMENTATION
+    // --------------------------------------------------------
+
+    drawNiiSegmentation();
+
+
+    return canvas;
+}
+
+
+// ------------------------------------------------------------
+// DRAW NIFTI SEGMENTATION
+// ------------------------------------------------------------
+
+function drawNiiSegmentation() {
+
+    if (
+        !niiSegmentationCtx ||
+        !niiEditableMask ||
+        !niiLastOriginalCanvas ||
+        !niiCropInfo
+    )
+        return;
+
+
+    const W =
+        niiLastOriginalCanvas.width;
+
+    const H =
+        niiLastOriginalCanvas.height;
+
+
+    niiSegmentationCtx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    // Original NIfTI slice
+    niiSegmentationCtx.drawImage(
+        niiLastOriginalCanvas,
+        0,
+        0
+    );
+
+
+    const imageData =
+        niiSegmentationCtx.getImageData(
+            0,
+            0,
+            W,
+            H
+        );
+
+    const data =
+        imageData.data;
+
+
+    const alpha =
+        niiMaskOpacity;
+
+
+    // --------------------------------------------------------
+    // MAP 512x512 MASK TO IMAGE
+    // --------------------------------------------------------
+
+    const scaleX =
+        niiCropInfo.width /
+        512;
+
+    const scaleY =
+        niiCropInfo.height /
+        512;
+
+
+    for (
+        let y = 0;
+        y < H;
+        y++
+    ) {
+
+        for (
+            let x = 0;
+            x < W;
+            x++
+        ) {
+
+            const maskX =
+                Math.floor(
+                    (
+                        x -
+                        niiCropInfo.x
+                    ) /
+                    scaleX
+                );
+
+            const maskY =
+                Math.floor(
+                    (
+                        y -
+                        niiCropInfo.y
+                    ) /
+                    scaleY
+                );
+
+
+            if (
+                maskX < 0 ||
+                maskY < 0 ||
+                maskX >= 512 ||
+                maskY >= 512
+            )
+                continue;
+
+
+            const srcX =
+                maskX -
+                Math.round(
+                    niiMaskOffsetX
+                );
+
+            const srcY =
+                maskY -
+                Math.round(
+                    niiMaskOffsetY
+                );
+
+
+            if (
+                srcX < 0 ||
+                srcY < 0 ||
+                srcX >= 512 ||
+                srcY >= 512
+            )
+                continue;
+
+
+            const maskValue =
+                niiEditableMask[
+                    srcY * 512 +
+                    srcX
+                ];
+
+
+            if (
+                maskValue !== 1
+            )
+                continue;
+
+
+            const i =
+                (
+                    y * W +
+                    x
+                ) * 4;
+
+
+            const originalR =
+                data[i];
+
+            const originalG =
+                data[i + 1];
+
+            const originalB =
+                data[i + 2];
+
+
+            // Red overlay
+            data[i] =
+                Math.round(
+                    originalR *
+                    (1 - alpha) +
+                    255 * alpha
+                );
+
+            data[i + 1] =
+                Math.round(
+                    originalG *
+                    (1 - alpha)
+                );
+
+            data[i + 2] =
+                Math.round(
+                    originalB *
+                    (1 - alpha)
+                );
+
+            data[i + 3] = 255;
+        }
+    }
+
+
+    niiSegmentationCtx.putImageData(
+        imageData,
+        0,
+        0
+    );
+}
+
+
+// ------------------------------------------------------------
+// NIFTI CONTROLS
+// ------------------------------------------------------------
+
 document
-    .getElementById("runNiiSegmentation")
+    .getElementById(
+        "runNiiSegmentation"
+    )
     .addEventListener(
         "click",
         runNiiSegmentation
     );
-document
-    .getElementById("axialButton")
-    .addEventListener(
-        "click",
-        () => setPlane("axial")
-    );
+
 
 document
-    .getElementById("coronalButton")
+    .getElementById(
+        "axialButton"
+    )
     .addEventListener(
         "click",
-        () => setPlane("coronal")
+        () => {
+
+            setNiiPlane(
+                "axial"
+            );
+        }
     );
 
+
 document
-    .getElementById("sagittalButton")
+    .getElementById(
+        "coronalButton"
+    )
     .addEventListener(
         "click",
-        () => setPlane("sagittal")
+        () => {
+
+            setNiiPlane(
+                "coronal"
+            );
+        }
+    );
+
+
+document
+    .getElementById(
+        "sagittalButton"
+    )
+    .addEventListener(
+        "click",
+        () => {
+
+            setNiiPlane(
+                "sagittal"
+            );
+        }
     );
