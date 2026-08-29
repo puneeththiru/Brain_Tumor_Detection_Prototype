@@ -615,6 +615,7 @@ body{
   gtag('js', new Date());
 
   gtag('config', 'G-RL7LWRZYW8');
+  
 </script>
 <body>
     <img src="gradient.png" alt="gradient" class="image-gradient">
@@ -1024,7 +1025,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     async function processMRIFile(file) {
-
+        if (typeof gtag === "function") {
+        gtag("event", "2d_mri_file_input");
+    }
         console.log("MRI file selected:", file.name);
 
         const progressBar =
@@ -1205,20 +1208,23 @@ document.addEventListener("DOMContentLoaded", () => {
     //nii file select
 
     niiInput.addEventListener(
-        "change",
-        (event) => {
+    "change",
+    (event) => {
 
-            const file =
-                event.target.files[0];
+        const file = event.target.files[0];
 
-            if (file) {
+        if (file) {
 
-                processNiftiFile(file);
-
+            if (typeof gtag === "function") {
+                gtag("event", "nifti_file_input");
             }
 
+            processNiftiFile(file);
+
         }
-    );
+
+    }
+);
 
 
     //drag drop nii
@@ -1302,18 +1308,13 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     function processNiftiFile(file) {
-
+        if (typeof gtag === "function") {
+        gtag("event", "nifti_file_input");
+    }
         console.log(
             "NIfTI file selected:",
             file.name
         );
-
-
-        /*
-         * Put the file into the existing
-         * niiInput so your current NIfTI
-         * code can use it if necessary.
-         */
 
         try {
 
