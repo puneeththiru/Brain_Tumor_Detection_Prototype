@@ -106,7 +106,7 @@ Return ONLY the final user-facing answer. Do not include analysis, reasoning, pl
         const response =
             await groq.chat.completions.create({
 
-                model: "qwen/qwen3.6-27b",
+                model: "qwen/qwen3.8-27b",
 
                 messages: [
 
