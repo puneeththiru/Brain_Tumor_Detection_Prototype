@@ -1,3 +1,5 @@
+
+
 ## BTDectection
 
 A Multimodal Website for Brain Tumor Detection, Analysis, and Interpretation via Three Machine Learning Models
@@ -14,7 +16,9 @@ This version of the site doesn't include VLM diagnostics, but you will still hav
 https://www.youtube.com/watch?v=WOtwsYzAgY8
 
 ## Overview
+<img width="2997" height="562" alt="Arxiv_Diagrams-1" src="https://github.com/user-attachments/assets/08de51ed-983c-4eb1-8211-cb348dbb5c0f" />
 
+<img width="1409" height="1454" alt="Arxiv_nii_view-1" src="https://github.com/user-attachments/assets/83f2e89a-b11c-44d8-9939-27d4dd297930" />
 This project provides a browser-based interface for analyzing brain MRI scans using multiple AI components.
 
 The application currently supports:
@@ -121,8 +125,6 @@ Return ONLY the final user-facing answer. Do not include analysis, reasoning, pl
 All data used to develop the two client-side models comes from BRISC2025:
 
 Fateh, A., Rezvani, Y., Moayedi, S. et al. BRISC: Annotated Dataset for Brain Tumor Segmentation and Classification. Sci Data 13, 361 (2026). https://doi.org/10.1038/s41597-026-06753-y
-
-Website design was insipred by: https://github.com/MiladiCode/3D-startup-app
 
 The DICOM to NIFTI Converter is from: https://niivue.github.io/niivue-dcm2niix/
 
