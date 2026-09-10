@@ -136,27 +136,20 @@ let history = [];
 let historyIndex = -1;
 function saveHistory() {
 
-    
     history =
         history.slice(0, historyIndex + 1);
 
-    // Save current mask and points
     history.push({
         mask: new Uint8Array(editableMask),
-        points: controlPoints.map(p => ({
-            x: p.x,
-            y: p.y
-        })),
         offsetX: maskOffsetX,
         offsetY: maskOffsetY
     });
 
     historyIndex++;
-
 }
 function undoEdit() {
 
-    if(historyIndex <= 0){
+    if (historyIndex <= 0) {
         console.log("Nothing to undo");
         return;
     }
@@ -168,18 +161,15 @@ function undoEdit() {
     editableMask =
         new Uint8Array(state.mask);
 
-    controlPoints =
-        state.points.map(p => ({
-            x:p.x,
-            y:p.y
-        }));
-
     maskOffsetX = state.offsetX;
     maskOffsetY = state.offsetY;
 
+    if (dotVisibility % 2 === 1) {
+        controlPoints =
+            generateControlPoints(editableMask);
+    }
 
     redrawMask(lastOriginalCanvas);
-
 }
 function contourToMask(controlPoints) {
 
@@ -1390,6 +1380,7 @@ async function analyzeMRI(img, progressCallback) {
         <b>${tumorArea}%</b>
         </p>
         <p>Click the "turn on dots button" and drag the dots to edit the mask</p>
+        <p>Click in the segmented area to drag the entire segmentation mask</P>
         `;
     container.innerHTML=""
     container.style.display = 'flex';
@@ -1443,10 +1434,10 @@ async function analyzeMRI(img, progressCallback) {
     undoSpan.textContent = 'Undo Edit';
     undoSpan.className = 'front';
     undoButton.appendChild(undoSpan)
-    undoButton.addEventListener(
-    'click',
-    undoEdit
-);
+    undoButton.addEventListener('click', () => {
+        undoEdit();
+
+    });
     const exportButton = document.createElement('button');
     exportButton.id = 'export';
     exportButton.type = 'button';
