@@ -1,6 +1,7 @@
 
 
 ## BTDectection
+<img width="400" height="225" alt="BTDetection_jif" src="https://github.com/user-attachments/assets/3450a424-84cc-484f-8099-67c607dce0c9" />
 
 A Multimodal Website for Brain Tumor Detection, Analysis, and Interpretation via Three Machine Learning Models
 
