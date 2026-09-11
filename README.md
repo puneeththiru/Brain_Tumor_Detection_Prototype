@@ -1,7 +1,8 @@
 
 
 ## BTDectection
-<img width="400" height="225" alt="BTDetection_jif" src="https://github.com/user-attachments/assets/3450a424-84cc-484f-8099-67c607dce0c9" />
+<img width="800" height="450" alt="BTDetection_jif-ezgif com-resize" src="https://github.com/user-attachments/assets/17376ba2-71c8-4c45-b7a1-8d0db016a09f" />
+
 
 A Multimodal Website for Brain Tumor Detection, Analysis, and Interpretation via Three Machine Learning Models
 
@@ -145,7 +146,7 @@ Precision  : 0.8935
 
 Recall     : 0.8931
 
-The classification model is going under further evaluation due to potential dataset leakage from the dataset's main aggregated sources.
+After multiple dataset cleanage scripts, the classifier's final f1 score across 15 epochs is greater than 0.95.
 
 ## NIFTI Viewing
 Clicking the tab for NIFTI Viewing allows the user to view the nifti file in all three anatomical planes. The user can run segmentation inference on a single image at a time. This was trained on glioma, meningioma, and pituitary tumors.
