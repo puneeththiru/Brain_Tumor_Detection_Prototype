@@ -1281,9 +1281,11 @@ async function analyzeMRI(img, progressCallback) {
         // CLASSIFICATION
         progressCallback(50, "Running classification...");
         await new Promise(resolve => requestAnimationFrame(resolve));
-
+        const startTimeC = performance.now();
         const classification = await runClassifier(input);
-
+        const endTimeC = performance.now();
+        const durationC = endTimeC-startTimeC
+        console.log(`${durationC} milliseconds`)
 
         const scores =
             Array.from(classification.data);
@@ -1333,7 +1335,14 @@ async function analyzeMRI(img, progressCallback) {
             ).join("<br>")
         }
         </p>
-
+        <p>
+        Inference time:
+        <br>
+        ${
+            durationC
+        }
+        Milliseconds
+        </p>
         `;
 
 
@@ -1347,8 +1356,10 @@ async function analyzeMRI(img, progressCallback) {
         if(predictionIndex !== 2){
         progressCallback(75, "Running segmentation...");
         await new Promise(resolve => requestAnimationFrame(resolve));
-
+        const startTimeS = performance.now();
         const result = await runSegmenter(input);
+        const endTimeS = performance.now();
+        const durationS = endTimeS-startTimeS;
         cropInfo = result.crop;
         progressCallback(100, "Inference complete.");
 
@@ -1378,6 +1389,12 @@ async function analyzeMRI(img, progressCallback) {
         <p>
         Tumor Pixel Area with respect to the image:
         <b>${tumorArea}%</b>
+        </p>
+        <p>
+        Inference Time:
+        <br>
+        ${durationS}
+        Milliseconds
         </p>
         <p>Click the "turn on dots button" and drag the dots to edit the mask</p>
         <p>Click in the segmented area to drag the entire segmentation mask</P>

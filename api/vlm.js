@@ -88,7 +88,7 @@ Briefly explain whether the segmentation result appears broadly consistent with 
 **Limitations**
 Briefly state that the system is an experimental research prototype and that the results require evaluation by a qualified medical professional.
 
-*Decision*
+**Decision**
 State a reasonable decision or outcome that is only meant to be taken seriously under a medical expert
 Model prediction:
 ${prediction}
