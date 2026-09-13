@@ -153,3 +153,5 @@ Clicking the tab for NIFTI Viewing allows the user to view the nifti file in all
 
 ## Special Thanks
 I'd like to thank Mr. Yasin Rezvani for play testing and giving feedback for the website. He has significantly contributed to the development of the website. I'd also like to thank Dr. Jason Johnson, Dr. Mantej Singh, and Mr. Zachary Yaninek for giving feedback for the website from a clinical perspective. They have helped the website to be geared more towards clinical use, but further development needs to occur before it can be used in clinical practice.
+
+If you find this project helpful, please consider giving it a ⭐! It helps other researchers discover the project, which increases the amount of feedback I get that can improve the website.
