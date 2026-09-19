@@ -152,6 +152,6 @@ After multiple dataset cleanage scripts, the classifier's final f1 score across 
 Clicking the tab for NIFTI Viewing allows the user to view the nifti file in all three anatomical planes. The user can run segmentation inference on a single image at a time. This was trained on glioma, meningioma, and pituitary tumors.
 
 ## Special Thanks
-I'd like to thank Mr. Yasin Rezvani for play testing and giving feedback for the website. He has significantly contributed to the development of the website. I'd also like to thank Dr. Jason Johnson, Dr. Mantej Singh, and Mr. Zachary Yaninek for giving feedback for the website from a clinical perspective. They have helped the website to be geared more towards clinical use, but further development needs to occur before it can be used in clinical practice.
+I'd like to thank Mr. Yasin Rezvani for play testing and giving feedback for the website. He has significantly contributed to the development of the website. I'd also like to thank Dr. Jason Johnson, Mr. Mantej Singh, and Mr. Zachary Yaninek for giving feedback for the website from a clinical perspective. They have helped the website to be geared more towards clinical use, but further development needs to occur before it can be used in clinical practice.
 
 If you find this project helpful, please consider giving it a ⭐! It helps other researchers discover the project, which increases the amount of feedback I get that can improve the website.
